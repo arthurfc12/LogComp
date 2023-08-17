@@ -1,2 +1,2 @@
 # LogComp
-Repositório para a matéria Lógica da Computação do 7 semestre de engenharia da computação
+![git status](http://3.129.230.99/svg/arthurfc12/LogComp)
