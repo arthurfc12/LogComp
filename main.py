@@ -1,4 +1,4 @@
-#import sys
+import sys
 #import string
 
 class Token:
@@ -80,5 +80,5 @@ class Parser:
         return(Parser.parseExpression())
         #pass
 
-#if __name__ == "__main__":
-#    print(Parser.run(sys.argv[1]))    
+if __name__ == "__main__":
+    print(Parser.run(sys.argv[1]))    
