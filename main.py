@@ -45,7 +45,7 @@ class Tokenizer:
                 self.actual = Token("DIV", 0)
                 self.position+=1
                 return
-            elif(self.origin[self.position] == " "):
+            elif(self.source[self.position] == " "):
                 self.position+=1
                 continue
             
