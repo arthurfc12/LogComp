@@ -28,6 +28,7 @@ class Tokenizer:
                         self.actual = Token("NUM", int(n))
                         return
                 self.actual = Token("NUM", int(n))
+                return
             elif(self.source[self.position] == "+" and self.actual.type != "PLUS"):
                 self.actual = Token("PLUS", 0)
                 self.position+=1
@@ -44,8 +45,8 @@ class Tokenizer:
                 self.actual = Token("DIV", 0)
                 self.position+=1
                 return
-            elif(self.position == self.source):
-                self.actual = Token("EOF", 0)
+            elif(self.origin[self.position] == " "):
+                self.position+=1
                 continue
             
             else:
@@ -71,7 +72,7 @@ class Parser:
                             result *=Parser.tokenizer.actual.value
                         else:
                             raise Exception("sequencia invalida (multiplicacao)")
-                    elif(Parser.tokenizer.actual.type == "DIV"): #metodo para div
+                    if(Parser.tokenizer.actual.type == "DIV"): #metodo para div
                         Parser.tokenizer.selectNext()
                         if(Parser.tokenizer.actual.type == "NUM"):
                             result /= Parser.tokenizer.actual.value
@@ -101,7 +102,7 @@ class Parser:
 
     
     def code_cleanup(code):
-        return(re.sub(r'/[*](.*?)[*]/',"", code))
+        return(re.sub('/[*](.*?)[*]/',"", code))
 
     @staticmethod
     def run(code):
