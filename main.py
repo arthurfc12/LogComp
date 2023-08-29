@@ -89,7 +89,7 @@ class Parser:
     def parseExpression():
         result = 0
         result += Parser.parseTerm()
-        while(True):
+        while (Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS") and Parser.tokenizer.actual.type != "EOF":      
             if(Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS"):
                 if(Parser.tokenizer.actual.type == "PLUS"):
                     result+=Parser.parseTerm()
