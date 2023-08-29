@@ -9,14 +9,14 @@ class Token:
 
 class Tokenizer:
     def __init__(self, source):
-        source_process = source.replace(" ","")
-        self.source = source_process
+        #source_process = source.replace(" ","")
+        self.source = source
         self.position = 0
         self.actual = Token(None,None)
 
     def selectNext(self):
         n = 0
-        while(len(self.source)!=self.position):
+        while(len(self.source)>self.position):
             if(self.source[self.position].isnumeric()):
                 n = self.source[self.position]
                 self.position+=1
@@ -28,19 +28,19 @@ class Tokenizer:
                         self.actual = Token("NUM", int(n))
                         return
                 self.actual = Token("NUM", int(n))
-            elif(self.source[self.position] == "+"):
+            elif(self.source[self.position] == "+" and self.actual.type != "PLUS"):
                 self.actual = Token("PLUS", 0)
                 self.position+=1
                 return
-            elif(self.source[self.position] == "-"):
+            elif(self.source[self.position] == "-" and self.actual.type != "MINUS"):
                 self.actual = Token("MINUS", 0)
                 self.position+=1
                 return
-            elif(self.source[self.position] == "*"):
+            elif(self.source[self.position] == "*" and self.actual.type != "MULT"):
                 self.actual = Token("MULT", 0)
                 self.position+=1
                 return
-            elif(self.source[self.position] == "/"):
+            elif(self.source[self.position] == "/" and self.actual.type != "DIV"):
                 self.actual = Token("DIV", 0)
                 self.position+=1
                 return
@@ -50,7 +50,8 @@ class Tokenizer:
             
             else:
                 raise Exception("caracter invalido")
-
+        self.actual = Token("EOF", 0)
+        return
         #pass:
 
 class Parser:
@@ -67,20 +68,20 @@ class Parser:
                     if(Parser.tokenizer.actual.type == "MULT"): #metodo para mult
                         Parser.tokenizer.selectNext()
                         if(Parser.tokenizer.actual.type == "NUM"):
-                            result +=Parser.tokenizer.actual.value
+                            result *=Parser.tokenizer.actual.value
                         else:
                             raise Exception("sequencia invalida (multiplicacao)")
                     elif(Parser.tokenizer.actual.type == "DIV"): #metodo para div
                         Parser.tokenizer.selectNext()
                         if(Parser.tokenizer.actual.type == "NUM"):
-                            result -= Parser.tokenizer.actual.value
+                            result /= Parser.tokenizer.actual.value
                         else:
                             raise Exception("sequencia invalida (divisao)")
                         #pass
                     Parser.tokenizer.selectNext() # vai pro prox digito
+                return result
             else:
-                raise Exception("sequencia invalida")
-            return result
+                return result
         else:
             raise Exception("sequencia invalida")
     
