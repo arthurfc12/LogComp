@@ -1,6 +1,6 @@
 import sys
 import re
-#import string
+import string
 
 class Token:
     def __init__(self, type, value):
