@@ -1,4 +1,5 @@
-#import sys
+import sys
+import re
 #import string
 
 class Token:
@@ -35,6 +36,14 @@ class Tokenizer:
                 self.actual = Token("MINUS", 0)
                 self.position+=1
                 return
+            elif(self.source[self.position] == "*"):
+                self.actual = Token("MULT", 0)
+                self.position+=1
+                return
+            elif(self.source[self.position] == "/"):
+                self.actual = Token("DIV", 0)
+                self.position+=1
+                return
             elif(self.position == self.source):
                 self.actual = Token("EOF", 0)
                 continue
@@ -48,25 +57,25 @@ class Parser:
     tokenizer = None
 
     @staticmethod
-    def parseExpression():
+    def parseTerm():
         Parser.tokenizer.selectNext()
         if(Parser.tokenizer.actual.type == "NUM"): #checa se eh numerico
             result = Parser.tokenizer.actual.value
             Parser.tokenizer.selectNext()
-            if(Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS"):
-                while(Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS"):
-                    if(Parser.tokenizer.actual.type == "PLUS"): #metodo para adicao
+            if(Parser.tokenizer.actual.type == "MULT" or Parser.tokenizer.actual.type == "DIV"):
+                while(Parser.tokenizer.actual.type == "MULT" or Parser.tokenizer.actual.type == "DIV"):
+                    if(Parser.tokenizer.actual.type == "MULT"): #metodo para mult
                         Parser.tokenizer.selectNext()
                         if(Parser.tokenizer.actual.type == "NUM"):
                             result +=Parser.tokenizer.actual.value
                         else:
-                            raise Exception("sequencia invalida (adicao)")
-                    elif(Parser.tokenizer.actual.type == "MINUS"): #metodo para subtracao
+                            raise Exception("sequencia invalida (multiplicacao)")
+                    elif(Parser.tokenizer.actual.type == "DIV"): #metodo para div
                         Parser.tokenizer.selectNext()
                         if(Parser.tokenizer.actual.type == "NUM"):
                             result -= Parser.tokenizer.actual.value
                         else:
-                            raise Exception("sequencia invalida (subtracao)")
+                            raise Exception("sequencia invalida (divisao)")
                         #pass
                     Parser.tokenizer.selectNext() # vai pro prox digito
             else:
@@ -74,11 +83,30 @@ class Parser:
             return result
         else:
             raise Exception("sequencia invalida")
+    
+    def parseExpression():
+        result = 0
+        result += Parser.parseTerm()
+        while(True):
+            if(Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS"):
+                if(Parser.tokenizer.actual.type == "PLUS"):
+                    result+=Parser.parseTerm()
+                elif(Parser.tokenizer.actual.type == "MINUS"):
+                    result-=Parser.parseTerm()
+                elif(Parser.tokenizer.actual.type == "NUM"):
+                    raise Exception("sequencia invalida")
+            else:
+                return int(result)
+
+    
+    def code_cleanup(code):
+        return(re.sub(r'/[*](.*?)[*]/',"", code))
+
     @staticmethod
     def run(code):
-        Parser.tokenizer = Tokenizer(code)
+        Parser.tokenizer = Tokenizer(Parser.code_cleanup(code))
         return(Parser.parseExpression())
         #pass
 
-#if __name__ == "__main__":
-#    print(Parser.run(sys.argv[1]))    
+if __name__ == "__main__":
+    print(Parser.run(sys.argv[1]))    
