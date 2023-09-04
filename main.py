@@ -6,12 +6,12 @@ def calculate_expression(eq):
     # Initialize variables
     resultado = 0
     prev_num_index = 0
-    subtstring = eq[prev_num_index:i]
-    number = int(subtstring)
     sinal = 0  # 0 represents addition, 1 represents subtraction
 
     # Iterate through the characters in the expression
     for i, char in enumerate(eq):
+        subtstring = eq[prev_num_index:i]
+        number = int(subtstring)
         if char == "+":
             if sinal == 0:
                 resultado += number
