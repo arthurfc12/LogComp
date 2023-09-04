@@ -5,20 +5,20 @@ def calc(equation):
     sinal = 0
     previous = 0
     for i in range (len(equation)):
-        substring = equation[previous:i]
-        number  = int(float(substring))
+        #substring = equation[previous:i]
+        #number  = int(float(substring))
         if equation[i] == "+":
             if sinal == 0:
-                resultado += number
+                resultado += int(equation[previous:i])
             else:
-                resultado -= number
+                resultado -= int(equation[previous:i])
             sinal = 0
             previous = i+1
         if equation[i] == "-":
             if sinal == 0:
-                resultado += number
+                resultado += int(equation[previous:i])
             else:
-                resultado -= number
+                resultado -= int(equation[previous:i])
             sinal = 1
             previous = i+1
     if sinal == 0:
