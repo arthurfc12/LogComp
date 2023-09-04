@@ -92,7 +92,7 @@ class Parser:
             elif(Parser.tokenizer.actual.type == "DIV"): #metodo para div
                 Parser.tokenizer.selectNext()
                 if(Parser.tokenizer.actual.type == "NUM"):
-                    result /= Parser.tokenizer.actual.value
+                    result //= Parser.tokenizer.actual.value
                 else:
                     raise Exception("sequencia invalida (divisao)")
                     #pass
