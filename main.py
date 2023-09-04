@@ -6,7 +6,7 @@ def calc(equation):
     previous = 0
     for i in range (len(equation)):
         substring = equation[previous:i]
-        number  = int(substring)
+        number  = int(float(substring))
         if equation[i] == "+":
             if sinal == 0:
                 resultado += number
