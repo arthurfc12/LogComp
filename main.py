@@ -2,130 +2,45 @@ import sys
 import re
 import string
 
-class PreProcessing:
-    def __init__(self, string_processed):
-        self.string_processed = string_processed
-  
-    def filter_expression(self):
-        self.string_processed = re.sub("/\*.*?\*/", "", self.string_processed)
-        return self.string_processed
+def calculate_expression(eq):
+    # Initialize variables
+    resultado = 0
+    prev_num_index = 0
+    subtstring = eq[prev_num_index:i]
+    number = int(subtstring)
+    sinal = 0  # 0 represents addition, 1 represents subtraction
 
-
-class Token:
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
-
-class Tokenizer:
-    def __init__(self, source):
-        #source_process = source.replace(" ","")
-        self.source = source
-        self.position = 0
-        self.actual = None
-
-    def selectNext(self):
-        
-        if self.position >= len(self.source):
-            self.actual = Token("EOF", " ")
-            return self.actual
-
-        if self.source[self.position] == " ":
-            self.position += 1
-            self.selectNext()
-    
-        elif self.source[self.position] == "+":
-            self.position += 1
-            self.actual = Token("PLUS", " ")
-            return self.actual
-    
-        elif self.source[self.position] == "-":
-            self.position += 1
-            self.actual = Token("MINUS", " ")
-            return self.actual
-        
-        elif self.source[self.position] == "*":
-            self.position += 1
-            self.actual = Token("MULT", "*")
-            return self.actual
-      
-        elif self.source[self.position] == "/":
-            self.position += 1
-            self.actual = Token("DIV", "/")
-            return self.actual
-        elif self.source[self.position].isnumeric():
-            candidato = self.source[self.position]
-            self.position += 1
-        
-            while self.position < len(self.source):
-                if self.source[self.position].isnumeric():
-                    candidato += self.source[self.position]
-                    self.position += 1
-                else:
-                    self.actual = Token("NUM", int(candidato))
-                    return self.actual
-            self.actual = Token("NUM", int(candidato))
-            return self.actual
-        else:
-            raise Exception("Token invalido")
-
-
-
-class Parser:
-    tokenizer = None
-
-    @staticmethod
-    def parseTerm():
-        result = 0
-        if Parser.tokenizer.actual.type != "NUM":
-            raise ValueError
-        result = Parser.tokenizer.actual.value
-        Parser.tokenizer.selectNext()
-        while((Parser.tokenizer.actual.type == "MULT" or Parser.tokenizer.actual.type == "DIV") and Parser.tokenizer.actual.type != "EOF"):
-            
-            if(Parser.tokenizer.actual.type == "MULT"): #metodo para mult
-                Parser.tokenizer.selectNext()
-                if(Parser.tokenizer.actual.type == "NUM"):
-                    result *=Parser.tokenizer.actual.value
-                else:
-                    raise Exception("sequencia invalida (multiplicacao)")
-            
-            elif(Parser.tokenizer.actual.type == "DIV"): #metodo para div
-                Parser.tokenizer.selectNext()
-                if(Parser.tokenizer.actual.type == "NUM"):
-                    result //= Parser.tokenizer.actual.value
-                else:
-                    raise Exception("sequencia invalida (divisao)")
-                    #pass
-            
-            Parser.tokenizer.selectNext() # vai pro prox digito
-        
-        return result
-    
-    def parseExpression():
-        Parser.tokenizer.selectNext()
-        result = 0
-        result = Parser.parseTerm()
-        while(Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS") and Parser.tokenizer.actual.type != "EOF":
-            if(Parser.tokenizer.actual.type == "PLUS"):
-                Parser.tokenizer.selectNext()
-                result+=Parser.parseTerm()
-            elif(Parser.tokenizer.actual.type == "MINUS"):
-                Parser.tokenizer.selectNext()
-                result-=Parser.parseTerm()
+    # Iterate through the characters in the expression
+    for i, char in enumerate(eq):
+        if char == "+":
+            if sinal == 0:
+                resultado += number
             else:
-                raise Exception("sequencia invalida")
-        if(Parser.tokenizer.actual.type != "EOF"):
-            raise Exception("sequencia invalida")
-        return result
+                resultado -= number
+            sinal = 0
+            prev_num_index = i + 1
+        elif char == "-":
+            if sinal == 0:
+                resultado += number
+            else:
+                resultado -= number
+            sinal = 1
+            prev_num_index = i + 1
 
-    
-    @staticmethod
-    def run(code):
-        code = PreProcessing(code).filter_expression()
-        Parser.tokenizer = Tokenizer(code)
-        result = Parser.parseExpression()
-        return result
-        #pass
+    # Handle the last part of the expression
+    if sinal == 0:
+        resultado += int(eq[prev_num_index:])
+    else:
+        resultado -= int(eq[prev_num_index:])
+
+    return resultado
 
 if __name__ == "__main__":
-    print(Parser.run(sys.argv[1]))    
+    import sys
+
+    if len(sys.argv) != 2:
+        print("python script_name.py <expression>")
+    else:
+        expression = sys.argv[1]
+        result = calculate_expression(expression)
+        print(result)
