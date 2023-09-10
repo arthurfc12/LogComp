@@ -145,8 +145,6 @@ class Parser:
                 result-=Parser.parseTerm()
             else:
                 raise Exception("sequencia invalida")
-        if(Parser.tokenizer.actual.type != "EOF"):
-            raise Exception("sequencia invalida")
         return result
 
     
@@ -157,8 +155,7 @@ class Parser:
         result = Parser.parseExpression()
         if Parser.tokenizer.actual.type != "EOF":
             raise Exception("sequencia invalida")
-        return result
+        print(result)
         #pass
 
-if __name__ == "__main__":
-    print(Parser.run(sys.argv[1]))    
+Parser.run(sys.argv[1])
