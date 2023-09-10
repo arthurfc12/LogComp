@@ -114,10 +114,6 @@ class Parser:
     @staticmethod
     def parseTerm():
         result = Parser.parseFactor()
-        if Parser.tokenizer.actual.type != "NUM":
-            raise ValueError
-        result = Parser.tokenizer.actual.value
-        Parser.tokenizer.selectNext()
         while((Parser.tokenizer.actual.type == "MULT" or Parser.tokenizer.actual.type == "DIV") and Parser.tokenizer.actual.type != "EOF"):
             
             if(Parser.tokenizer.actual.type == "MULT"): #metodo para mult
@@ -134,14 +130,11 @@ class Parser:
                 else:
                     raise Exception("sequencia invalida (divisao)")
                     #pass
-            
-            Parser.tokenizer.selectNext() # vai pro prox digito
         
         return result
     
     def parseExpression():
         Parser.tokenizer.selectNext()
-        result = 0
         result = Parser.parseTerm()
         while(Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS") and Parser.tokenizer.actual.type != "EOF":
             if(Parser.tokenizer.actual.type == "PLUS"):
@@ -162,6 +155,8 @@ class Parser:
         code = PreProcessing(code).filter_expression()
         Parser.tokenizer = Tokenizer(code)
         result = Parser.parseExpression()
+        if Parser.tokenizer.actual.type != "EOF":
+            raise Exception("sequencia invalida")
         return result
         #pass
 
