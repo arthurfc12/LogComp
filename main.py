@@ -6,7 +6,6 @@ class PreProcessing:
         self.string_processed = string_processed
 
     def filter_expression(self):
-        # Remove comments and extra spaces
         self.string_processed = re.sub(r"/\*.*?\*/", "", self.string_processed)
         self.string_processed = self.string_processed.replace(" ", "")
         return self.string_processed
@@ -61,63 +60,63 @@ class Tokenizer:
         return self.actual
 
 class Parser:
-    tokenizer = None
+    def __init__(self, code):
+        self.code = code
+        self.tokenizer = Tokenizer(self.code)
 
-    @staticmethod
-    def parseFactor():
+    def parseFactor(self):
         result = 0
-        if Parser.tokenizer.actual.type == "NUM":
-            result = Parser.tokenizer.actual.value
-            Parser.tokenizer.selectNext()
-        elif Parser.tokenizer.actual.type == "OPENP":
-            Parser.tokenizer.selectNext()
-            result = Parser.parseExpression()
-            if Parser.tokenizer.actual.type != "CLOSEP":
+        if self.tokenizer.actual.type == "NUM":
+            result = self.tokenizer.actual.value
+            self.tokenizer.selectNext()
+        elif self.tokenizer.actual.type == "OPENP":
+            self.tokenizer.selectNext()
+            result = self.parseExpression()
+            if self.tokenizer.actual.type != "CLOSEP":
                 raise Exception("Sequência inválida")
-            Parser.tokenizer.selectNext()
-        elif Parser.tokenizer.actual.type == "MINUS":
-            Parser.tokenizer.selectNext()
-            result = -Parser.parseFactor()
+            self.tokenizer.selectNext()
+        elif self.tokenizer.actual.type == "MINUS":
+            self.tokenizer.selectNext()
+            result = -self.parseFactor()
         else:
             raise ValueError("Fator inválido")
         return result
 
-    @staticmethod
-    def parseTerm():
-        result = Parser.parseFactor()
-        while (Parser.tokenizer.actual.type == "MULT" or Parser.tokenizer.actual.type == "DIV") and Parser.tokenizer.actual.type != "EOF":
-            if Parser.tokenizer.actual.type == "MULT":
-                Parser.tokenizer.selectNext()
-                result *= Parser.parseFactor()
-            elif Parser.tokenizer.actual.type == "DIV":
-                Parser.tokenizer.selectNext()
-                divisor = Parser.parseFactor()
+    def parseTerm(self):
+        result = self.parseFactor()
+        while (self.tokenizer.actual.type == "MULT" or self.tokenizer.actual.type == "DIV") and self.tokenizer.actual.type != "EOF":
+            if self.tokenizer.actual.type == "MULT":
+                self.tokenizer.selectNext()
+                result *= self.parseFactor()
+            elif self.tokenizer.actual.type == "DIV":
+                self.tokenizer.selectNext()
+                divisor = self.parseFactor()
                 if divisor == 0:
                     raise Exception("Divisão por zero")
                 result //= divisor
         return result
 
-    @staticmethod
-    def parseExpression():
-        result = Parser.parseTerm()
-        while (Parser.tokenizer.actual.type == "PLUS" or Parser.tokenizer.actual.type == "MINUS") and Parser.tokenizer.actual.type != "EOF":
-            if Parser.tokenizer.actual.type == "PLUS":
-                Parser.tokenizer.selectNext()
-                result += Parser.parseTerm()
-            elif Parser.tokenizer.actual.type == "MINUS":
-                Parser.tokenizer.selectNext()
-                result -= Parser.parseTerm()
+    def parseExpression(self):
+        result = self.parseTerm()
+        while (self.tokenizer.actual.type == "PLUS" or self.tokenizer.actual.type == "MINUS") and self.tokenizer.actual.type != "EOF":
+            if self.tokenizer.actual.type == "PLUS":
+                self.tokenizer.selectNext()
+                result += self.parseTerm()
+            elif self.tokenizer.actual.type == "MINUS":
+                self.tokenizer.selectNext()
+                result -= self.parseTerm()
             else:
                 raise Exception("Sequência inválida")
         return result
 
-    @staticmethod
-    def run(code):
-        code = PreProcessing(code).filter_expression()
-        Parser.tokenizer = Tokenizer(code)
-        result = Parser.parseExpression()
-        if Parser.tokenizer.actual.type != "EOF":
+    def run(self):
+        result = self.parseExpression()
+        if self.tokenizer.actual.type != "EOF":
             raise Exception("Sequência inválida")
         print(result)
 
-Parser.run(sys.argv[1])
+if __name__ == "__main__":
+    code = sys.argv[1]
+    code = PreProcessing(code).filter_expression()
+    parser = Parser(code)
+    parser.run()
