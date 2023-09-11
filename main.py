@@ -8,6 +8,7 @@ class PreProcessing:
   
     def filter_expression(self):
         self.string_processed = re.sub("/\*.*?\*/", "", self.string_processed)
+        self.string_processed = self.string_processed.replace(" ", "")
         return self.string_processed
 
 
@@ -24,6 +25,9 @@ class Tokenizer:
         self.actual = None
 
     def selectNext(self):
+        while self.position < len(self.source) and self.source[self.position] == ' ':
+            self.position += 1
+
         
         if self.position >= len(self.source):
             self.actual = Token("EOF", " ")
@@ -35,12 +39,12 @@ class Tokenizer:
     
         elif self.source[self.position] == "+":
             self.position += 1
-            self.actual = Token("PLUS", " ")
+            self.actual = Token("PLUS", "+")
             return self.actual
     
         elif self.source[self.position] == "-":
             self.position += 1
-            self.actual = Token("MINUS", " ")
+            self.actual = Token("MINUS", "-")
             return self.actual
         
         elif self.source[self.position] == "*":
@@ -67,17 +71,14 @@ class Tokenizer:
             candidato = self.source[self.position]
             self.position += 1
         
-            while self.position < len(self.source):
-                if self.source[self.position].isnumeric():
-                    candidato += self.source[self.position]
-                    self.position += 1
-                else:
-                    self.actual = Token("NUM", int(candidato))
-                    return self.actual
+            while self.position < len(self.source) and self.source[self.position].isnumeric():
+                candidato += self.source[self.position]
+                self.position += 1
             self.actual = Token("NUM", int(candidato))
-            return self.actual
         else:
             raise Exception("Token invalido")
+        
+        return self.actual
 
 
 
@@ -92,6 +93,7 @@ class Parser:
             Parser.tokenizer.selectNext()
         
         elif Parser.tokenizer.actual.type == "OPENP":
+            Parser.tokenizer.selectNext()
             result = Parser.parseExpression()
             if Parser.tokenizer.actual.type != "CLOSEP":
                 raise Exception("sequencia invalida")
