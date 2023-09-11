@@ -2,13 +2,12 @@ import sys
 import re
 
 class PreProcessing:
-    def __init__(self, string_processed):
-        self.string_processed = string_processed
+    def __init__(self, entire_string):
+        self.entire_string = entire_string
 
     def filter_expression(self):
-        self.string_processed = re.sub(r"/\*.*?\*/", "", self.string_processed)
-        self.string_processed = self.string_processed.replace(" ", "")
-        return self.string_processed
+        self.entire_string = re.sub("/\*.*?\*/", "", self.entire_string)
+        return self.entire_string
 
 class Token:
     def __init__(self, type, value):
@@ -22,101 +21,119 @@ class Tokenizer:
         self.actual = None
 
     def selectNext(self):
-        while self.position < len(self.source) and self.source[self.position] == ' ':
-            self.position += 1
-
         if self.position >= len(self.source):
             self.actual = Token("EOF", " ")
             return self.actual
 
-        if self.source[self.position] == "+":
+        if self.source[self.position] == " ":
             self.position += 1
-            self.actual = Token("PLUS", "+")
-        elif self.source[self.position] == "-":
-            self.position += 1
-            self.actual = Token("MINUS", "-")
+            self.selectNext()
         elif self.source[self.position] == "*":
             self.position += 1
             self.actual = Token("MULT", "*")
+            return self.actual
         elif self.source[self.position] == "/":
             self.position += 1
             self.actual = Token("DIV", "/")
+            return self.actual
+        elif self.source[self.position] == "+":
+            self.position += 1
+            self.actual = Token("PLUS", " ")
+            return self.actual
+        elif self.source[self.position] == "-":
+            self.position += 1
+            self.actual = Token("MINUS", " ")
+            return self.actual
         elif self.source[self.position] == "(":
             self.position += 1
-            self.actual = Token("OPENP", "(")
+            self.actual = Token("OPENP", " ")
+            return self.actual
         elif self.source[self.position] == ")":
             self.position += 1
-            self.actual = Token("CLOSEP", ")")
+            self.actual = Token("CLOSEP", " ")
+            return self.actual
         elif self.source[self.position].isnumeric():
             candidato = self.source[self.position]
             self.position += 1
-            while self.position < len(self.source) and self.source[self.position].isnumeric():
-                candidato += self.source[self.position]
-                self.position += 1
-            self.actual = Token("NUM", int(candidato))
-        else:
-            raise Exception("Token inválido")
 
-        return self.actual
+            while self.position < len(self.source):
+                if self.source[self.position].isnumeric():
+                    candidato += self.source[self.position]
+                    self.position += 1
+                else:
+                    self.actual = Token("NUM", int(candidato))
+                    return self.actual
+
+            self.actual = Token("NUM", int(candidato))
+            return self.actual
+        else:
+            raise ValueError
 
 class Parser:
-    def __init__(self, code):
-        self.code = code
-        self.tokenizer = Tokenizer(self.code)
+    tokens = None
 
-    def parseFactor(self):
+    @staticmethod
+    def parse_factor():
         result = 0
-        if self.tokenizer.actual.type == "NUM":
-            result = self.tokenizer.actual.value
-            self.tokenizer.selectNext()
-        elif self.tokenizer.actual.type == "OPENP":
-            self.tokenizer.selectNext()
-            result = self.parseExpression()
-            if self.tokenizer.actual.type != "CLOSEP":
-                raise Exception("Sequência inválida")
-            self.tokenizer.selectNext()
-        elif self.tokenizer.actual.type == "MINUS":
-            self.tokenizer.selectNext()
-            result = -self.parseFactor()
+
+        if Parser.tokens.actual.type == "NUM":
+            result = Parser.tokens.actual.value
+            Parser.tokens.selectNext()
+        elif Parser.tokens.actual.type == "OPENP":
+            result = Parser.parse_expression()
+            if Parser.tokens.actual.type != "CLOSEP":
+                raise ValueError
+            Parser.tokens.selectNext()
+        elif Parser.tokens.actual.type == "PLUS":
+            Parser.tokens.selectNext()
+            result += Parser.parse_factor()
+        elif Parser.tokens.actual.type == "MINUS":
+            Parser.tokens.selectNext()
+            result -= Parser.parse_factor()
         else:
-            raise ValueError("Fator inválido")
+            raise ValueError
+
         return result
 
-    def parseTerm(self):
-        result = self.parseFactor()
-        while (self.tokenizer.actual.type == "MULT" or self.tokenizer.actual.type == "DIV") and self.tokenizer.actual.type != "EOF":
-            if self.tokenizer.actual.type == "MULT":
-                self.tokenizer.selectNext()
-                result *= self.parseFactor()
-            elif self.tokenizer.actual.type == "DIV":
-                self.tokenizer.selectNext()
-                divisor = self.parseFactor()
-                if divisor == 0:
-                    raise Exception("Divisão por zero")
-                result //= divisor
+    @staticmethod
+    def parse_term():
+        result = Parser.parse_factor()
+
+        while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
+            if Parser.tokens.actual.type == "MULT":
+                Parser.tokens.selectNext()
+                result *= Parser.parse_factor()
+            elif Parser.tokens.actual.type == "DIV":
+                Parser.tokens.selectNext()
+                result //= Parser.parse_factor()
+
         return result
 
-    def parseExpression(self):
-        result = self.parseTerm()
-        while (self.tokenizer.actual.type == "PLUS" or self.tokenizer.actual.type == "MINUS") and self.tokenizer.actual.type != "EOF":
-            if self.tokenizer.actual.type == "PLUS":
-                self.tokenizer.selectNext()
-                result += self.parseTerm()
-            elif self.tokenizer.actual.type == "MINUS":
-                self.tokenizer.selectNext()
-                result -= self.parseTerm()
+    @staticmethod
+    def parse_expression():
+        Parser.tokens.selectNext()
+        result = Parser.parse_term()
+
+        while (Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS") and Parser.tokens.actual.type != "EOF":
+            if Parser.tokens.actual.type == "PLUS":
+                Parser.tokens.selectNext()
+                result += Parser.parse_term()
+            elif Parser.tokens.actual.type == "MINUS":
+                Parser.tokens.selectNext()
+                result -= Parser.parse_term()
             else:
-                raise Exception("Sequência inválida")
+                raise ValueError
+
         return result
 
-    def run(self):
-        result = self.parseExpression()
-        if self.tokenizer.actual.type != "EOF":
-            raise Exception("Sequência inválida")
+    @staticmethod
+    def run(code):
+        code_filter = PreProcessing(code).filter_expression()
+        Parser.tokens = Tokenizer(code_filter)
+        result = Parser.parse_expression()
+        if Parser.tokens.actual.type != "EOF":
+            raise ValueError
         print(result)
 
 if __name__ == "__main__":
-    code = sys.argv[1]
-    code = PreProcessing(code).filter_expression()
-    parser = Parser(code)
-    parser.run()
+    Parser.run(sys.argv[1])
