@@ -22,8 +22,17 @@ class Parser:
             Parser.tokens.selectNext()
         #PLUS
         elif Parser.tokens.actual.type == "PLUS":
-            Parser.tokens.selectNext()
-            node = UnOp("+",[Parser.parse_factor()])
+    # Verifique se o próximo token é um sinal de adição ou subtração
+            if Parser.tokens.peek().type == "PLUS" or Parser.tokens.peek().type == "MINUS":
+        # Se o próximo token também for um sinal de adição ou subtração, avance o cursor duas vezes
+                Parser.tokens.selectNext()
+                Parser.tokens.selectNext()
+        # Crie um nó BinOp para representar a adição
+                node = BinOp("+", [node, Parser.parse_factor()])
+            else:
+        # Caso contrário, avance o cursor apenas uma vez e crie um nó UnOp para o sinal de adição
+                Parser.tokens.selectNext()
+                node = UnOp("+", [Parser.parse_factor()])
         #MINUS
         elif Parser.tokens.actual.type == "MINUS":
             Parser.tokens.selectNext()
