@@ -10,21 +10,25 @@ class Parser:
     @staticmethod
     def parse_factor():
         node = 0
-
+        #NUM
         if Parser.tokens.actual.type == "NUM":
             node = IntVal(Parser.tokens.actual.value,[])
             Parser.tokens.selectNext()
+        #OPENP
         elif Parser.tokens.actual.type == "OPENP":
             node = Parser.parse_expression()
             if Parser.tokens.actual.type != "CLOSEP":
-                raise ValueError
+                raise Exception("parenteses não fechados")
             Parser.tokens.selectNext()
+        #PLUS
         elif Parser.tokens.actual.type == "PLUS":
             Parser.tokens.selectNext()
             node = UnOp("+",[Parser.parse_factor()])
+        #MINUS
         elif Parser.tokens.actual.type == "MINUS":
             Parser.tokens.selectNext()
             node = UnOp("-",[Parser.parse_factor()])
+
         else:
             raise Exception("Factor")  
 
@@ -38,9 +42,11 @@ class Parser:
             if Parser.tokens.actual.type == "MULT":
                 Parser.tokens.selectNext()
                 node = BinOp("*",[node, Parser.parse_factor()])
+
             elif Parser.tokens.actual.type == "DIV":
                 Parser.tokens.selectNext()
                 node = BinOp("/",[node, Parser.parse_factor()])
+
             else:
                 raise Exception("Term")
 
@@ -55,9 +61,11 @@ class Parser:
             if Parser.tokens.actual.type == "PLUS":
                 Parser.tokens.selectNext()
                 node = BinOp("+", [node, Parser.parse_term()])
+
             elif Parser.tokens.actual.type == "MINUS":
                 Parser.tokens.selectNext()
                 node = BinOp("-", [node, Parser.parse_term()])
+
             else:
                 raise Exception("Expression")
 
@@ -72,8 +80,8 @@ class Parser:
         Parser.tokens = Tokenizer(code_filter)
         node = Parser.parse_expression()
         if Parser.tokens.actual.type != "EOF":
-            raise ValueError
+            raise Exception("EOF não encontrado")
         print(node.evaluate())
 
-if __name__ == "__main__":
-    Parser.run(sys.argv[1])
+
+Parser.run(sys.argv[1])

@@ -53,4 +53,4 @@ class Tokenizer:
             self.actual = Token("NUM", int(candidato))
             return self.actual
         else:
-            raise ValueError
+            raise Exception("Tokenizer selectnext")
