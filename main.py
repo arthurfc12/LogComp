@@ -26,7 +26,7 @@ class Parser:
             Parser.tokens.selectNext()
             node = UnOp("-",[Parser.parse_factor()])
         else:
-            raise ValueError
+            raise Exception("Factor")  
 
         return node
 
@@ -42,7 +42,7 @@ class Parser:
                 Parser.tokens.selectNext()
                 node = BinOp("/",[node, Parser.parse_factor()])
             else:
-                raise ValueError
+                raise Exception("Term")
 
         return node
 
@@ -59,7 +59,7 @@ class Parser:
                 Parser.tokens.selectNext()
                 node = BinOp("-", [node, Parser.parse_term()])
             else:
-                raise ValueError
+                raise Exception("Expression")
 
         return node
 
