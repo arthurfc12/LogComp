@@ -1,4 +1,5 @@
 import sys
+import re
 from PreProcessing import PreProcessing
 from Node import BinOp, IntVal, NoOp, UnOp
 from Tokenizer import Tokenizer
@@ -8,85 +9,83 @@ class Parser:
     tokens = None
 
     @staticmethod
-    def parse_factor():
-        node = 0
-        #NUM
-        if Parser.tokens.actual.type == "NUM":
-            node = IntVal(Parser.tokens.actual.value,[])
+    def parseFactor():
+
+        if(Parser.tokens.actual.type == "NUM"):
+            node = IntVal(Parser.tokens.actual.value,
+                          [])
             Parser.tokens.selectNext()
-        #OPENP
-        elif Parser.tokens.actual.type == "OPENP":
+
+        elif(Parser.tokens.actual.type == "MINUS"):
             Parser.tokens.selectNext()
-            node = Parser.parse_expression()
-            if Parser.tokens.actual.type == "CLOSEP":
+            node = UnOp('-', [Parser.parseFactor()])
+
+        elif(Parser.tokens.actual.type == "PLUS"):
+            Parser.tokens.selectNext()
+            node = UnOp('+', [Parser.parseFactor()])
+
+        elif(Parser.tokens.actual.type == "OPNEP"):
+            Parser.tokens.selectNext()
+            node = Parser.parseExpression()
+            if(Parser.tokens.actual.type == "CLOSEP"):
                 Parser.tokens.selectNext()
-            else:   
-                raise Exception("Factor")
-        #PLUS
-        elif Parser.tokens.actual.type == "PLUS":
-            Parser.tokens.selectNext()
-            node = UnOp("+",[Parser.parse_factor()])
-        #MINUS
-        elif Parser.tokens.actual.type == "MINUS":
-            Parser.tokens.selectNext()
-            node = UnOp("-",[Parser.parse_factor()])
+            else:
+                raise ValueError("ERROR")
 
         else:
-            raise Exception("Factor")  
+            raise ValueError("ERROR")
 
         return node
 
     @staticmethod
-    def parse_term():
-        node = Parser.parse_factor()
+    def parseTerm():
+        node = Parser.parseFactor()
 
-        while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
-            if Parser.tokens.actual.type == "MULT":
+        while((Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV")):
+
+            if(Parser.tokens.actual.type == "MULT"):
                 Parser.tokens.selectNext()
-                node = BinOp("*",[node, Parser.parse_factor()])
+                node = BinOp('*', [node, Parser.parseFactor()])
 
-            elif Parser.tokens.actual.type == "DIV":
+            elif(Parser.tokens.actual.type == "DIV"):
                 Parser.tokens.selectNext()
-                node = BinOp("/",[node, Parser.parse_factor()])
-
-            else:
-                raise Exception("Term")
+                node = BinOp('/', [node, Parser.parseFactor()])
 
         return node
 
     @staticmethod
-    def parse_expression():
-        node = Parser.parse_term()
+    def parseExpression():
+        node = Parser.parseTerm()
 
-        while (Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS"):
-            if Parser.tokens.actual.type == "PLUS":
+        while((Parser.tokens.actual.type == "MINUS" or Parser.tokens.actual.type == "PLUS")):
+
+            if(Parser.tokens.actual.type == "MINUS"):
                 Parser.tokens.selectNext()
-                node = BinOp("+", [node, Parser.parse_term()])
+                node = BinOp('-', [node, Parser.parseTerm()])
 
-            elif Parser.tokens.actual.type == "MINUS":
+            elif(Parser.tokens.actual.type == "PLUS"):
                 Parser.tokens.selectNext()
-                node = BinOp("-", [node, Parser.parse_term()])
-
-            else:
-                raise Exception("Expression")
+                node = BinOp('+', [node, Parser.parseTerm()])
 
         return node
 
-    @staticmethod
     def run(code):
-        file = open(code, "r")
-        code = file.read()
-        file.close()
-        code_filter = PreProcessing(code).filter_expression()
-        Parser.tokens = Tokenizer(code_filter)
+        f = open(code, "r")
+        code = f.read()
+        f.close()
+        postProCode = PreProcessing.filter(code)
+        Parser.tokens = Tokenizer(postProCode)
         Parser.tokens.selectNext()
-        result = Parser.parse_expression()
-        if Parser.tokens.actual.type != "EOF":
-            raise Exception("EOF não encontrado")
-        return result.evaluate()
+
+        result = Parser.parseExpression()
+        if(Parser.tokens.actual.type != "EOF"):
+            raise ValueError("ERROR")
+        return result.Evaluate()
+
 
 if(len(sys.argv) <= 1):
-    raise Exception("argumentos insuficientes")
+    raise ValueError("ERROR")
+
 
 arg = str(sys.argv[1])
-Parser.run(arg)
+print(Parser.run(arg))

@@ -1,9 +1,9 @@
-from Token import Token
+from Token import Token 
 
 class Tokenizer:
     def __init__(self, source):
         self.source = source
-        self.position = 0 
+        self.position = 0
         self.actual = None
 
     def selectNext(self):
@@ -39,7 +39,7 @@ class Tokenizer:
 
         elif(self.source[self.position] == '('):
             self.position += 1
-            self.actual = Token("OPENP", 0)
+            self.actual = Token("OPNEP", 0)
             return self.actual
 
         elif(self.source[self.position] == ')'):
@@ -60,4 +60,4 @@ class Tokenizer:
             return self.actual
 
         else:
-            raise ValueError("Token inválido")
+            raise ValueError("TOKENIZER")

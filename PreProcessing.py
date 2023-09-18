@@ -1,8 +1,6 @@
 import re
-class PreProcessing:
-    def __init__(self, entire_string):
-        self.entire_string = entire_string
 
-    def filter_expression(self):
-        self.entire_string = re.sub("/\*.*?\*/", "", self.entire_string)
-        return self.entire_string
+class PreProcessing:
+    @staticmethod
+    def filter(code):
+        return re.sub("/\*.*?\*/", "", code)

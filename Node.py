@@ -1,37 +1,35 @@
-class Node():
+class Node:
     def __init__(self, value, children):
         self.value = value
         self.children = children
-    
-    def evaluate(self):
+
+    def Evaluate(self):
         pass
 
 class BinOp(Node):
-    def evaluate(self):
-        if self.value == "+":
-            return self.children[0].evaluate() + self.children[1].evaluate()
-        elif self.value == "-":
-            return self.children[0].evaluate() - self.children[1].evaluate()
-        elif self.value == "*":
-            return self.children[0].evaluate() * self.children[1].evaluate()
-        elif self.value == "/":
-            return self.children[0].evaluate() // self.children[1].evaluate()
-        else:
-            raise Exception("BinOp")
+
+    def Evaluate(self):
+        if(self.value == "+"):
+            return self.children[0].Evaluate() + self.children[1].Evaluate()
+        elif (self.value == "-"):
+            return self.children[0].Evaluate() - self.children[1].Evaluate()
+        elif (self.value == "*"):
+            return self.children[0].Evaluate() * self.children[1].Evaluate()
+        elif (self.value == "/"):
+            return self.children[0].Evaluate() // self.children[1].Evaluate()
+        
 
 class UnOp(Node):
-    def evaluate(self):
-        if self.value == "+":
-            return self.children[0].evaluate()
-        elif self.value == "-":
-            return -self.children[0].evaluate()
-        else:
-            raise Exception("UnOp")
+    def Evaluate(self):
+        if(self.value == "+"):
+            return self.children[0].Evaluate()
+        elif (self.value == "-"):
+            return -self.children[0].Evaluate()
         
 class IntVal(Node):
-    def evaluate(self):
+    def Evaluate(self):
         return self.value
     
 class NoOp(Node):
-    def evaluate(self):
+    def Evaluate(self):
         pass
