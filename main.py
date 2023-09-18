@@ -76,7 +76,7 @@ class Parser:
         file = open(code, "r")
         code = file.read()
         file.close()
-        code_filter = PreProcessing(code)
+        code_filter = PreProcessing(code).filter_expression()
         Parser.tokens = Tokenizer(code_filter)
         Parser.tokens.selectNext()
         result = Parser.parse_expression()
