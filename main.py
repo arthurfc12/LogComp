@@ -11,9 +11,11 @@ class Token:
 class PreProcessing:
     @staticmethod
     def filter(code):
-        pattern = r'[a-zA-Z]'
-        text_without_letters = re.sub(pattern, '', code)
-        return re.sub("/\*.*?\*/", "", text_without_letters)
+        pattern = "[a-zA-Z]"
+        text_without_letters = re.sub(pattern, "", code)
+        pattern_comments = "/\*.*?\*/"
+        text_without_comments = re.sub(pattern_comments, "", text_without_letters)
+        return text_without_comments
 
 
 class Node:
