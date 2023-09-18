@@ -3,54 +3,61 @@ from Token import Token
 class Tokenizer:
     def __init__(self, source):
         self.source = source
-        self.position = 0
+        self.position = 0 
         self.actual = None
 
     def selectNext(self):
-        if self.position >= len(self.source):
-            self.actual = Token("EOF", " ")
+        if(self.position >= len(self.source)):
+            self.actual = Token("EOF", 0)
             return self.actual
 
-        if self.source[self.position] == " ":
+        while(self.source[self.position] == " "):
             self.position += 1
-            self.selectNext()
-        elif self.source[self.position] == "*":
-            self.position += 1
-            self.actual = Token("MULT", "*")
-            return self.actual
-        elif self.source[self.position] == "/":
-            self.position += 1
-            self.actual = Token("DIV", "/")
-            return self.actual
-        elif self.source[self.position] == "+":
-            self.position += 1
-            self.actual = Token("PLUS", " ")
-            return self.actual
-        elif self.source[self.position] == "-":
-            self.position += 1
-            self.actual = Token("MINUS", " ")
-            return self.actual
-        elif self.source[self.position] == "(":
-            self.position += 1
-            self.actual = Token("OPENP", " ")
-            return self.actual
-        elif self.source[self.position] == ")":
-            self.position += 1
-            self.actual = Token("CLOSEP", " ")
-            return self.actual
-        elif self.source[self.position].isnumeric():
-            candidato = self.source[self.position]
-            self.position += 1
+            if(self.position >= len(self.source)):
+                self.actual = Token("EOF", 0)
+                return self.actual
 
-            while self.position < len(self.source):
-                if self.source[self.position].isnumeric():
-                    candidato += self.source[self.position]
+        if(self.source[self.position] == '+'):
+            self.position += 1
+            self.actual = Token("PLUS", 0)
+            return self.actual
+
+        elif(self.source[self.position] == '-'):
+            self.position += 1
+            self.actual = Token("MINUS", 0)
+            return self.actual
+
+        elif(self.source[self.position] == '*'):
+            self.position += 1
+            self.actual = Token("MULT", 0)
+            return self.actual
+
+        elif(self.source[self.position] == '/'):
+            self.position += 1
+            self.actual = Token("DIV", 0)
+            return self.actual
+
+        elif(self.source[self.position] == '('):
+            self.position += 1
+            self.actual = Token("OPENP", 0)
+            return self.actual
+
+        elif(self.source[self.position] == ')'):
+            self.position += 1
+            self.actual = Token("CLOSEP", 0)
+            return self.actual
+
+        elif(self.source[self.position].isnumeric()):
+            cadidato = self.source[self.position]
+            self.position += 1
+            if(self.position < len(self.source)):
+                while(self.source[self.position].isnumeric()):
+                    cadidato += self.source[self.position]
                     self.position += 1
-                else:
-                    self.actual = Token("NUM", int(candidato))
-                    return self.actual
-
-            self.actual = Token("NUM", int(candidato))
+                    if(self.position >= len(self.source)):
+                        break
+            self.actual = Token("NUM", int(cadidato))
             return self.actual
+
         else:
-            raise Exception("Tokenizer selectnext")
+            raise ValueError("Token inválido")

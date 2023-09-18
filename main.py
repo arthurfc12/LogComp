@@ -1,55 +1,91 @@
 import sys
 from PreProcessing import PreProcessing
-from Node import BinOp, IntVal, UnOp
+from Node import BinOp, IntVal, NoOp, UnOp
 from Tokenizer import Tokenizer
 
+
 class Parser:
-    def __init__(self, code):
-        self.tokens = Tokenizer(PreProcessing(code).filter_expression())
-        self.tokens.selectNext()
+    tokens = None
 
-    def parse_factor(self):
-        if self.tokens.actual.type == "NUM":
-            node = IntVal(self.tokens.actual.value, [])
-            self.tokens.selectNext()
-        elif self.tokens.actual.type == "OPENP":
-            self.tokens.selectNext()
-            node = self.parse_expression()
-            if self.tokens.actual.type != "CLOSEP":
-                raise Exception("Parênteses não fechados")
-            self.tokens.selectNext()
-        elif self.tokens.actual.type in {"PLUS", "MINUS"}:
-            operator = self.tokens.actual.type
-            self.tokens.selectNext()
-            node = UnOp(operator, [self.parse_factor()])
+    @staticmethod
+    def parse_factor():
+        node = 0
+        #NUM
+        if Parser.tokens.actual.type == "NUM":
+            node = IntVal(Parser.tokens.actual.value,[])
+            Parser.tokens.selectNext()
+        #OPENP
+        elif Parser.tokens.actual.type == "OPENP":
+            Parser.tokens.selectNext()
+            node = Parser.parse_expression()
+            if Parser.tokens.actual.type != "CLOSEP":
+                raise Exception("parenteses não fechados")
+            Parser.tokens.selectNext()
+        #PLUS
+        elif Parser.tokens.actual.type == "PLUS":
+            Parser.tokens.selectNext()
+            node = UnOp("+",[Parser.parse_factor()])
+        #MINUS
+        elif Parser.tokens.actual.type == "MINUS":
+            Parser.tokens.selectNext()
+            node = UnOp("-",[Parser.parse_factor()])
+
         else:
-            raise Exception("Fator inválido")
+            raise Exception("Factor")  
+
         return node
 
-    def parse_term(self):
-        node = self.parse_factor()
-        while self.tokens.actual.type in {"MULT", "DIV"}:
-            operator = self.tokens.actual.type
-            self.tokens.selectNext()
-            node = BinOp(operator, [node, self.parse_factor()])
+    @staticmethod
+    def parse_term():
+        node = Parser.parse_factor()
+
+        while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
+            if Parser.tokens.actual.type == "MULT":
+                Parser.tokens.selectNext()
+                node = BinOp("*",[node, Parser.parse_factor()])
+
+            elif Parser.tokens.actual.type == "DIV":
+                Parser.tokens.selectNext()
+                node = BinOp("/",[node, Parser.parse_factor()])
+
+            else:
+                raise Exception("Term")
+
         return node
 
-    def parse_expression(self):
-        node = self.parse_term()
-        while self.tokens.actual.type in {"PLUS", "MINUS"}:
-            operator = self.tokens.actual.type
-            self.tokens.selectNext()
-            node = BinOp(operator, [node, self.parse_term()])
+    @staticmethod
+    def parse_expression():
+        node = Parser.parse_term()
+
+        while (Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS"):
+            if Parser.tokens.actual.type == "PLUS":
+                Parser.tokens.selectNext()
+                node = BinOp("+", [node, Parser.parse_term()])
+
+            elif Parser.tokens.actual.type == "MINUS":
+                Parser.tokens.selectNext()
+                node = BinOp("-", [node, Parser.parse_term()])
+
+            else:
+                raise Exception("Expression")
+
         return node
 
-    def run(self):
-        node = self.parse_expression()
-        if self.tokens.actual.type != "EOF":
+    @staticmethod
+    def run(code):
+        file = open(code, "r")
+        code = file.read()
+        file.close()
+        code_filter = PreProcessing(code)
+        Parser.tokens = Tokenizer(code_filter)
+        Parser.tokens.selectNext()
+        result = Parser.parse_expression()
+        if Parser.tokens.actual.type != "EOF":
             raise Exception("EOF não encontrado")
-        result = node.evaluate()
-        print(result)
+        return result.evaluate()
 
-if __name__ == "__main__":
-    code = open(sys.argv[1], "r").read()
-    parser = Parser(code)
-    parser.run()
+if(len(sys.argv) <= 1):
+    raise Exception("argumentos insuficientes")
+
+arg = str(sys.argv[1])
+Parser.run(arg)
