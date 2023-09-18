@@ -18,9 +18,10 @@ class Parser:
         elif Parser.tokens.actual.type == "OPENP":
             Parser.tokens.selectNext()
             node = Parser.parse_expression()
-            if Parser.tokens.actual.type != "CLOSEP":
-                raise Exception("parenteses não fechados")
-            Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "CLOSEP":
+                Parser.tokens.selectNext()
+            else:   
+                raise Exception("Factor")
         #PLUS
         elif Parser.tokens.actual.type == "PLUS":
             Parser.tokens.selectNext()
