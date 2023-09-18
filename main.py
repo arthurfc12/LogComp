@@ -33,7 +33,7 @@ class BinOp(Node):
         elif (self.value == "*"):
             return self.children[0].Evaluate() * self.children[1].Evaluate()
         elif (self.value == "/"):
-            return self.children[0].Evaluate() // self.children[1].Evaluate()
+            return self.children[0].Evaluate() / self.children[1].Evaluate()
 
 
 class UnOp(Node):
