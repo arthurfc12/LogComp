@@ -1,208 +1,208 @@
 import sys
 import re
 
-
 class Token:
-    def __init__(self, type, value):
+    def __init__(self, type : str, value : int):
         self.type = type
         self.value = value
 
-
 class PreProcessing:
-    @staticmethod
-    def filter(code):
-        pattern = "[a-zA-Z]"
-        text_without_letters = re.sub(pattern, "", code)
-        pattern_comments = "/\*.*?\*/"
-        text_without_comments = re.sub(pattern_comments, "", text_without_letters)
-        return text_without_comments
-
-
+    def __init__(self, pre_string):
+        self.pre_string = pre_string
+          
+    def filter(self):
+        self.pre_string = re.sub('//.*', "", self.pre_string)
+        return self.pre_string.strip()
+        
 class Node:
     def __init__(self, value, children):
         self.value = value
         self.children = children
-
-    def Evaluate(self):
+        
+    def Evaluate():
         pass
 
-
 class BinOp(Node):
-
     def Evaluate(self):
-        if(self.value == "+"):
+        if self.value == "+":
             return self.children[0].Evaluate() + self.children[1].Evaluate()
-        elif (self.value == "-"):
+        elif self.value == "-":
             return self.children[0].Evaluate() - self.children[1].Evaluate()
-        elif (self.value == "*"):
+        elif self.value == "*":
             return self.children[0].Evaluate() * self.children[1].Evaluate()
-        elif (self.value == "/"):
+        elif self.value == "/":
             return self.children[0].Evaluate() // self.children[1].Evaluate()
-
-
+        
+        else: 
+            raise ValueError("BinOP")
+        
 class UnOp(Node):
-
     def Evaluate(self):
-        if(self.value == "+"):
+        if self.value == "+":
             return self.children[0].Evaluate()
-        elif (self.value == "-"):
+        elif self.value == "-":
             return -self.children[0].Evaluate()
-
-
+        else: 
+            raise ValueError("UnOP")
+        
 class IntVal(Node):
-
     def Evaluate(self):
         return self.value
 
-
 class NoOp(Node):
-
     def Evaluate(self):
         pass
-
-
+    
 class Tokenizer:
-    def __init__(self, source):
+    def __init__(self, source: str):
         self.source = source
         self.position = 0
         self.actual = None
 
     def selectNext(self):
-        if(self.position >= len(self.source)):
-            self.actual = Token("EOF", 0)
+        if self.position >= len(self.source):
+            self.actual = Token("EOF", " ")
             return self.actual
 
-        while(self.source[self.position] == " "):
+        elif self.source[self.position].isnumeric():
+            num = self.source[self.position]
             self.position += 1
-            if(self.position >= len(self.source)):
-                self.actual = Token("EOF", 0)
-                return self.actual
 
-        if(self.source[self.position] == '+'):
-            self.position += 1
-            self.actual = Token("PLUS", 0)
-            return self.actual
-
-        elif(self.source[self.position] == '-'):
-            self.position += 1
-            self.actual = Token("MINUS", 0)
-            return self.actual
-
-        elif(self.source[self.position] == '*'):
-            self.position += 1
-            self.actual = Token("MULT", 0)
-            return self.actual
-
-        elif(self.source[self.position] == '/'):
-            self.position += 1
-            self.actual = Token("DIV", 0)
-            return self.actual
-
-        elif(self.source[self.position] == '('):
-            self.position += 1
-            self.actual = Token("OPENP", 0)
-            return self.actual
-
-        elif(self.source[self.position] == ')'):
-            self.position += 1
-            self.actual = Token("CLOSEP", 0)
-            return self.actual
-
-        elif(self.source[self.position].isnumeric()):
-            cadidato = self.source[self.position]
-            self.position += 1
-            if(self.position < len(self.source)):
-                while(self.source[self.position].isnumeric()):
-                    cadidato += self.source[self.position]
+            while self.position < len(self.source):
+                if self.source[self.position].isnumeric():
+                    num += self.source[self.position]
                     self.position += 1
-                    if(self.position >= len(self.source)):
-                        break
-            self.actual = Token("NUM", int(cadidato))
+                else: 
+                    self.actual = Token("NUM", int(num))
+                    return self.actual
+            self.actual = Token("NUM", int(num))
             return self.actual
 
+        elif self.source[self.position] == "+":
+            self.position += 1
+            self.actual = Token("PLUS", " ")
+            return self.actual
+
+        elif self.source[self.position] == "-" :
+            self.position += 1
+            self.actual = Token("MINUS", " ")
+            return self.actual
+        
+        elif self.source[self.position] == "/":
+            self.position += 1
+            self.actual = Token("DIV", "/")
+            return self.actual
+        
+        elif self.source[self.position] == "*":
+            self.position += 1
+            self.actual = Token("MULT", "*")
+            return self.actual
+        
+
+        elif self.source[self.position] == " ":
+            self.position += 1
+            self.selectNext()
+
+        elif self.source[self.position] == "(":
+            self.position += 1
+            self.actual = Token("OPENP", " ")
+            return self.actual
+
+        elif self.source[self.position] == ")":
+            self.position += 1
+            self.actual = Token("CLOSEP", " ")
+            return self.actual
+    
+        
         else:
-            raise ValueError("ERROR")
+            raise Exception("caracter invalido")
+
 
 
 class Parser:
-    tokens = None
+    tokens: None
 
-    @staticmethod
     def parseFactor():
-        if(Parser.tokens.actual.type == "NUM"):
-            node = IntVal(Parser.tokens.actual.value,[])
-            Parser.tokens.selectNext()
+       
+       if Parser.tokens.next.type == "NUM":
+           node = IntVal(Parser.tokens.next.value, [])
+           Parser.tokens.selectNext()
 
-        elif(Parser.tokens.actual.type == "MINUS"):
-            Parser.tokens.selectNext()
-            node = UnOp('-', [Parser.parseFactor()])
 
-        elif(Parser.tokens.actual.type == "PLUS"):
-            Parser.tokens.selectNext()
-            node = UnOp('+', [Parser.parseFactor()])
+       elif Parser.tokens.next.type == "PLUS":
+           Parser.tokens.selectNext()
+           node = UnOp("+", [Parser.parseFactor()])
 
-        elif(Parser.tokens.actual.type == "OPENP"):
-            Parser.tokens.selectNext()
+
+       elif Parser.tokens.next.type == "MINUS":
+           Parser.tokens.selectNext()
+           node = UnOp("-" , [Parser.parseFactor()])
+      
+       elif Parser.tokens.next.type == "OPENP":
             node = Parser.parseExpression()
-            if(Parser.tokens.actual.type == "CLOSEP"):
-                Parser.tokens.selectNext()
+            if Parser.tokens.next.type != "CLOSEP":
+               raise ValueError("string invalida")
+
             else:
-                raise ValueError("ERROR")
+                Parser.tokens.selectNext()
+       else:
+           raise ValueError("string invalida")
+      
+       return node
+    
 
-        else:
-            raise ValueError("ERROR")
+    def parserTerm():
 
-        return node
-
-    @staticmethod
-    def parseTerm():
         node = Parser.parseFactor()
 
-        while((Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV")):
+        while (Parser.tokens.next.type == "MULT" or Parser.tokens.next.type == "DIV") :
 
-            if(Parser.tokens.actual.type == "MULT"):
+            if Parser.tokens.next.type == "DIV":
                 Parser.tokens.selectNext()
-                node = BinOp('*', [node, Parser.parseFactor()])
+                node = BinOp("/", [node, Parser.parseFactor()])
 
-            elif(Parser.tokens.actual.type == "DIV"):
+            elif Parser.tokens.next.type == "MULT":
                 Parser.tokens.selectNext()
-                node = BinOp('/', [node, Parser.parseFactor()])
+                node = BinOp("*", [node, Parser.parseFactor()])
 
         return node
+                
+    
 
-    @staticmethod
+        
     def parseExpression():
-        node = Parser.parseTerm()
-
-        while((Parser.tokens.actual.type == "MINUS" or Parser.tokens.actual.type == "PLUS")):
-
-            if(Parser.tokens.actual.type == "MINUS"):
-                Parser.tokens.selectNext()
-                node = BinOp('-', [node, Parser.parseTerm()])
-
-            elif(Parser.tokens.actual.type == "PLUS"):
-                Parser.tokens.selectNext()
-                node = BinOp('+', [node, Parser.parseTerm()])
-
-        return node
-
-    def run(code):
-        f = open(code, "r")
-        code = f.read()
-        f.close()
-        postProCode = PreProcessing.filter(code)
-        Parser.tokens = Tokenizer(postProCode)
+        
         Parser.tokens.selectNext()
+        node = Parser.parserTerm()
 
-        result = Parser.parseExpression()
-        if(Parser.tokens.actual.type != "EOF"):
-            raise ValueError("ERROR")
-        return result.Evaluate()
+        while Parser.tokens.next.type != "EOF" and ((Parser.tokens.next.type == "PLUS" or Parser.tokens.next.type == "MINUS")) :
 
-
-if(len(sys.argv) <= 1):
-    raise ValueError("ERROR")
+            if Parser.tokens.next.type == "PLUS":
+                Parser.tokens.selectNext()
+                node = BinOp("+", [node, Parser.parserTerm()])
 
 
-arg = str(sys.argv[1])
-print(Parser.run(arg))
+            elif Parser.tokens.next.type == "MINUS":
+                Parser.tokens.selectNext()
+                node = BinOp("-", [node, Parser.parserTerm()])
+                
+            else: 
+                raise ValueError
+        return node
+        
+
+
+    def run(file):
+        filestring = open(file, "r")
+        code = filestring.read()
+        filestring.close()
+        processed_file = PreProcessing(code).filter()
+        Parser.tokens = Tokenizer(processed_file)  
+        node = Parser.parseExpression()
+        
+        if Parser.tokens.next.type != "EOF":
+            raise Exception("string invalida")
+        print(node.Evaluate())
+
+
+Parser.run(sys.argv[1])
