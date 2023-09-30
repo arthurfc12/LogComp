@@ -1,7 +1,9 @@
 import sys
 import re
 import string
-from Node import Node, BinOp, UnOp, IntVal, NoOp
+from Node import Node, BinOp, UnOp, IntVal, NoOp, SymbolTable,Identifier,Assigment,Println,Block
+from Token import Token
+from Tokenizer import Tokenizer
 
 PLUS = "+"
 MINUS = "-"
@@ -11,12 +13,11 @@ INT = "NUM"
 EOF = "End of file"
 OPENP = "("
 CLOSEP = ")"
+IDENTIFIER = "IDENTIFIER"
+EQUAL = "="
+PRINT = "Println"
+END = "\n"
 
-
-class Token:
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
 
 
 class PreProcessing:
@@ -24,85 +25,55 @@ class PreProcessing:
         self.source = source
           
     def filter(self):
-        return re.sub(r"\/\/.*$","",self.source,flags=re.MULTILINE)
+        with open(self.source, 'r') as input_file:
+                code = input_file.read()
 
+        code = re.sub(r'//.*', '', code)
+        return code
 
-class Tokenizer:
-    def __init__(self, source, next = None, position = 0):
-        self.source = str(source)
-        self.position = position
-        self.next = next
-
-    def selectNext(self):
-        value = ""
-        type = None
-
-        if self.position >= len(self.source):
-            value = "EOF"
-            type = EOF
-            self.next = Token(type=type, value=value)
-            return
-
-        while self.position != len(self.source):
-            if re.match("[0-9]", self.source[self.position]):
-                while self.position < len(self.source):
-                    if re.match(r"[0-9]", self.source[self.position]):
-                        value += self.source[self.position]
-                        self.position += 1
-                    else:
-                        type = INT
-                        self.next = Token(type=type, value=int(value))
-                        return
-                type = INT
-                self.next = Token(type=type, value=int(value))
-                return
-            elif self.source[self.position] == "+":
-                value = self.source[self.position]
-                type = PLUS
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "-":
-                value = self.source[self.position]
-                type = MINUS
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "*":
-                value = self.source[self.position]
-                type = MULT
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "/":
-                value = self.source[self.position]
-                type = DIV
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "(":
-                value = self.source[self.position]
-                type = OPENP
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == ")":
-                value = self.source[self.position]
-                type = CLOSEP
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == " ":
-                self.position += 1
-                continue
-            else:
-                raise Exception("valor não previsto")
 
 
 class Parser:
     tokens = None
 
+    def parseBlock(self):
+        childrens = []
+        while self.tokens.next.type != EOF:
+            node = self.parseStatement()
+            childrens.append(node)
+        master = Block(None,childrens)
+        return master
     
+    def parseStatement(self):
+        if self.tokens.next.type == IDENTIFIER:
+            variable = Identifier(self.tokens.next.value,[])
+            self.tokens.selectNext()
+            if self.tokens.next.type == EQUAL:
+                self.tokens.selectNext()
+                variable = Assigment(EQUAL,[variable,self.parseExpression()])
+            else:
+                raise Exception("Incorreto equal")
+        elif self.tokens.next.type == PRINT:
+            self.tokens.selectNext()
+            if self.tokens.next.type == OPENP:
+                self.tokens.selectNext()
+                variable = Println(PRINT,[self.parseExpression()])
+                if self.tokens.next.type == CLOSEP:
+                    self.tokens.selectNext()
+                    if self.tokens.next.type == END:
+                        self.tokens.selectNext()
+                    else:
+                        raise Exception("Incorreto end")
+                else:
+                    raise Exception("Incorreto closep")
+        elif self.tokens.next.type == END:
+            self.tokens.selectNext()
+            variable = NoOp("N",[])
+        else:
+            raise Exception("Incorreto parseStatement")
+            
+        return variable
+  
     
     def parseExpression(self):
         node = self.parseTerm()
@@ -160,18 +131,17 @@ class Parser:
 
     
     def run(self, code):
-        file = open(code,"r")
-        new = file.read()
-        file.close()
-        filtered = PreProcessing(new).filter()
-        filtered = filtered.strip()
+        filtered = PreProcessing(code).filter()
+        identifier_table = SymbolTable()
         self.tokens = Tokenizer(filtered)
         self.tokens.selectNext()
-        master_node = self.parseExpression()
+        master_node = self.parseBlock()
+        
         if self.tokens.next.type == EOF:
-            return master_node.Evaluate()
+            a = master_node.Evaluate(identifier_table)
+            return a
         else:
-            raise Exception("Code Incorrect")
+            raise Exception("erro no run")
 
 
 if __name__ == "__main__":
