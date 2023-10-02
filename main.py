@@ -124,7 +124,12 @@ class Parser:
                 self.tokens.selectNext()
             else:
                 raise Exception("Erro no parseFactor")
+        elif self.tokens.next.type == IDENTIFIER:
+            node = Identifier(self.tokens.next.value,[])
+            self.tokens.selectNext()
         else:
+            print(self.tokens.next.type)
+            print(self.tokens.next.value)
             raise Exception("Erro no parseFactor")
         return node
         
