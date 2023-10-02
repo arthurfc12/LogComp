@@ -31,7 +31,10 @@ class Tokenizer:
             self.next = Token(type=type, value=value)
             return
 
-        while self.position != len(self.source):
+        while self.position < len(self.source):
+            if self.position >= len(self.source):
+                self.next = Token(EOF, " ")
+                return
             if re.match("[0-9]", self.source[self.position]):
                 while self.position < len(self.source):
                     if re.match(r"[0-9]", self.source[self.position]):
