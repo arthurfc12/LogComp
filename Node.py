@@ -17,9 +17,9 @@ class Node():
         self.value = value
         self.children = children
         
-    def Evaluate(self, table: SymbolTable):
+    def Evaluate(self,table : SymbolTable):
         pass
-    
+
 class BinOp(Node):
     def Evaluate(self,table : SymbolTable):
         if self.value == "+":
@@ -43,11 +43,11 @@ class UnOp(Node):
             raise Exception("Erro")
         
 class IntVal(Node):
-    def Evaluate(self):
+    def Evaluate(self,table : SymbolTable):
         return self.value
     
 class NoOp(Node):
-    def Evaluate(self):
+    def Evaluate(self,table : SymbolTable):
         pass
 
 class Identifier(Node):
