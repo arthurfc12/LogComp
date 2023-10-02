@@ -18,8 +18,6 @@ EQUAL = "="
 PRINT = "Println"
 END = "\n"
 
-
-
 class PreProcessing:
     def __init__(self, source):
         self.source = source
@@ -30,8 +28,6 @@ class PreProcessing:
 
         code = re.sub(r'//.*', '', code)
         return code
-
-
 
 class Parser:
     tokens = None
@@ -52,7 +48,7 @@ class Parser:
                 self.tokens.selectNext()
                 variable = Assigment(EQUAL,[variable,self.parseExpression()])
             else:
-                raise Exception("Incorreto equal")
+                raise Exception("erro no statement")
         elif self.tokens.next.type == PRINT:
             self.tokens.selectNext()
             if self.tokens.next.type == OPENP:
@@ -63,30 +59,29 @@ class Parser:
                     if self.tokens.next.type == END:
                         self.tokens.selectNext()
                     else:
-                        raise Exception("Incorreto end")
+                        raise Exception("erro no statement")
                 else:
-                    raise Exception("Incorreto closep")
+                    raise Exception("erro no statement")
         elif self.tokens.next.type == END:
             self.tokens.selectNext()
             variable = NoOp("N",[])
         else:
-            raise Exception("Incorreto parseStatement")
+            raise Exception("erro no statement")
             
         return variable
-  
     
     def parseExpression(self):
         node = self.parseTerm()
-        while (self.tokens.next.type == PLUS or self.tokens.next.type == MINUS):
+        while self.tokens.next.type == PLUS or self.tokens.next.type == MINUS:
             if self.tokens.next.type == PLUS:
                 self.tokens.selectNext()
                 node = BinOp(PLUS,[node,self.parseTerm()])
             elif self.tokens.next.type == MINUS:
                 self.tokens.selectNext()
                 node = BinOp(MINUS,[node,self.parseTerm()])
-        
+                
         if self.tokens.next.type == INT:
-            raise Exception("Erro no parseExpression")
+            raise Exception("erro no expression")
            
         return node
 
@@ -100,10 +95,9 @@ class Parser:
                 self.tokens.selectNext()
                 node = BinOp(DIV,[node,self.parseFactor()])
             else:
-                raise Exception("Erro no parseTerm")
+                raise Exception("erro no term")
             
         return node
-
     
     def parseFactor(self):
         node = 0
@@ -116,24 +110,22 @@ class Parser:
         elif self.tokens.next.type == MINUS:
             self.tokens.selectNext()
             node = UnOp(MINUS,[self.parseFactor()])
-            
-        elif self.tokens.next.type == OPENP:
+        elif self.tokens.next.type == CLOSEP:
             self.tokens.selectNext()
             node = self.parseExpression()
-            if self.tokens.next.type == CLOSEP:
+            if self.tokens.next.type == OPENP:
                 self.tokens.selectNext()
             else:
-                raise Exception("Erro no parseFactor")
+                raise Exception("erro no factor")
         elif self.tokens.next.type == IDENTIFIER:
             node = Identifier(self.tokens.next.value,[])
             self.tokens.selectNext()
         else:
             print(self.tokens.next.type)
             print(self.tokens.next.value)
-            raise Exception("Erro no parseFactor")
-        return node
+            raise Exception("erro no factor")
         
-
+        return node
     
     def run(self, code):
         filtered = PreProcessing(code).filter()
@@ -148,12 +140,9 @@ class Parser:
         else:
             raise Exception("erro no run")
 
-
 if __name__ == "__main__":
     chain = sys.argv[1]
 
     parser = Parser()
 
     final = parser.run(chain)
-    
-    print(final)

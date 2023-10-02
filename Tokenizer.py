@@ -14,12 +14,11 @@ EQUAL = "="
 PRINT = "Println"
 END = "\n"
 
-
 class Tokenizer:
-    def __init__(self, source, next = None, position = 0):
+    def __init__(self, source, next=None, position=0):
         self.source = str(source)
-        self.position = position
         self.next = next
+        self.position = position
 
     def selectNext(self):
         value = ""
@@ -106,9 +105,9 @@ class Tokenizer:
                     type = IDENTIFIER
                     self.next = Token(type=type, value=str(value))
                 return
-
             elif self.source[self.position] == " ":
                 self.position += 1
                 continue
             else:
+                print(self.source[self.position])
                 raise Exception("valor não previsto")
