@@ -17,7 +17,7 @@ class Node():
         self.value = value
         self.children = children
         
-    def Evaluate(self):
+    def Evaluate(self, table: SymbolTable):
         pass
     
 class BinOp(Node):
