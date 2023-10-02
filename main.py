@@ -110,10 +110,10 @@ class Parser:
         elif self.tokens.next.type == MINUS:
             self.tokens.selectNext()
             node = UnOp(MINUS,[self.parseFactor()])
-        elif self.tokens.next.type == CLOSEP:
+        elif self.tokens.next.type == OPENP:
             self.tokens.selectNext()
             node = self.parseExpression()
-            if self.tokens.next.type == OPENP:
+            if self.tokens.next.type == CLOSEP:
                 self.tokens.selectNext()
             else:
                 raise Exception("erro no factor")
