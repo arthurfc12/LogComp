@@ -92,7 +92,7 @@ class Tokenizer:
                 self.next = Token(type=type, value=value)
                 self.position += 1
                 return
-            elif re.match("[a-zA-Z]", self.source[self.position]):  # Checking if is IDENTIFIER
+            elif re.match("[a-zA-Z]", self.source[self.position]):
                 while self.position < len(self.source) and re.match(r"[a-zA-Z1-9_]", self.source[self.position]):
                     value += self.source[self.position]
                     self.position += 1
