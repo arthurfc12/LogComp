@@ -1,22 +1,13 @@
 import sys
 import re
 import string
-from Node import Node, BinOp, UnOp, IntVal, NoOp, SymbolTable,Identifier,Assigment,Println,Block
+from Node import *
 from Token import Token
-from Tokenizer import Tokenizer
+from Tokenizer import *
 
-PLUS = "+"
-MINUS = "-"
-MULT = "*"
-DIV = "/"
-INT = "NUM"
-EOF = "End of file"
-OPENP = "("
-CLOSEP = ")"
-IDENTIFIER = "IDENTIFIER"
-EQUAL = "="
-PRINT = "Println"
-END = "\n"
+
+with open(sys.argv[1], 'r') as f:
+    input = f.read()
 
 class PreProcessing:
     def __init__(self, source):
@@ -28,121 +19,167 @@ class PreProcessing:
 
         code = re.sub(r'//.*', '', code)
         return code
-
+    
 class Parser:
-    tokens = None
+    def __init__(self, code: str):
+        self.tokenizer = Tokenizer(code, 0)
+        self.signals = ["+", "-", "/", "*", "(", ")", "=", "\n", "|", "&", "=", "Println", ">", "<", "!", "if", "{", "}", "for", ";", "Scanln"]
 
-    def parseBlock(self):
-        childrens = []
-        while self.tokens.next.type != EOF:
-            node = self.parseStatement()
-            childrens.append(node)
-        master = Block(None,childrens)
-        return master
-    
-    def parseStatement(self):
-        if self.tokens.next.type == IDENTIFIER:
-            variable = Identifier(self.tokens.next.value,[])
-            self.tokens.selectNext()
-            if self.tokens.next.type == EQUAL:
-                self.tokens.selectNext()
-                variable = Assigment(EQUAL,[variable,self.parseExpression()])
-            else:
-                raise Exception("erro no statement")
-        elif self.tokens.next.type == PRINT:
-            self.tokens.selectNext()
-            if self.tokens.next.type == OPENP:
-                self.tokens.selectNext()
-                variable = Println(PRINT,[self.parseExpression()])
-                if self.tokens.next.type == CLOSEP:
-                    self.tokens.selectNext()
-                    if self.tokens.next.type == END:
-                        self.tokens.selectNext()
-                    else:
-                        raise Exception("erro no statement")
-                else:
-                    raise Exception("erro no statement")
-        elif self.tokens.next.type == END:
-            self.tokens.selectNext()
-            variable = NoOp("N",[])
-        else:
-            raise Exception("erro no statement")
-            
-        return variable
-    
-    def parseExpression(self):
-        node = self.parseTerm()
-        while self.tokens.next.type == PLUS or self.tokens.next.type == MINUS:
-            if self.tokens.next.type == PLUS:
-                self.tokens.selectNext()
-                node = BinOp(PLUS,[node,self.parseTerm()])
-            elif self.tokens.next.type == MINUS:
-                self.tokens.selectNext()
-                node = BinOp(MINUS,[node,self.parseTerm()])
-                
-        if self.tokens.next.type == INT:
-            raise Exception("erro no expression")
-           
-        return node
+    def program(self):
+        program = Program()
+        while self.tokenizer.position != len(self.tokenizer.source):
+            child = self.statement()
+            if self.tokenizer.next.value == "\n":
+                self.tokenizer.select_next()
+            program.children.append(child)
+        return program
 
-    def parseTerm(self):
-        node = self.parseFactor()
-        while self.tokens.next.type == MULT or self.tokens.next.type == DIV:
-            if self.tokens.next.type == MULT:
-                self.tokens.selectNext()
-                node = BinOp(MULT,[node,self.parseFactor()])
-            elif self.tokens.next.type == DIV:
-                self.tokens.selectNext()
-                node = BinOp(DIV,[node,self.parseFactor()])
-            else:
-                raise Exception("erro no term")
-            
-        return node
-    
-    def parseFactor(self):
-        node = 0
-        if self.tokens.next.type == INT:
-            node = IntVal(self.tokens.next.value, [])
-            self.tokens.selectNext()
-        elif self.tokens.next.type == PLUS:
-            self.tokens.selectNext()
-            node = UnOp(PLUS,[self.parseFactor()])
-        elif self.tokens.next.type == MINUS:
-            self.tokens.selectNext()
-            node = UnOp(MINUS,[self.parseFactor()])
-        elif self.tokens.next.type == OPENP:
-            self.tokens.selectNext()
-            node = self.parseExpression()
-            if self.tokens.next.type == CLOSEP:
-                self.tokens.selectNext()
-            else:
-                raise Exception("erro no factor")
-        elif self.tokens.next.type == IDENTIFIER:
-            node = Identifier(self.tokens.next.value,[])
-            self.tokens.selectNext()
-        else:
-            print(self.tokens.next.type)
-            print(self.tokens.next.value)
-            raise Exception("erro no factor")
+    def statement(self):   
+        if self.tokenizer.next.value == "Println":
+            self.tokenizer.select_next()
+            if self.tokenizer.next.value != "(":
+                raise ValueError(f"stetement\nLast token: {self.tokenizer.next.value}")
+            return Println(self.bool_expr())
         
-        return node
-    
-    def run(self, code):
-        filtered = PreProcessing(code).filter()
-        identifier_table = SymbolTable()
-        self.tokens = Tokenizer(filtered)
-        self.tokens.selectNext()
-        master_node = self.parseBlock()
+        elif self.tokenizer.next.value == "if":
+            self.tokenizer.select_next() 
+            condition = self.bool_expr()
+            if self.tokenizer.next.value != "{":
+                raise ValueError(f"statement\nLast token: {self.tokenizer.next.value}")
+            if_true = self.block()
+            if self.tokenizer.next.value == "else":
+                self.tokenizer.select_next()
+                if self.tokenizer.next.value != "{":
+                    raise ValueError(f"statement\nLast token: {self.tokenizer.next.value}")
+                if_false = self.block()
+            elif (self.tokenizer.next.value == "\n") | (self.tokenizer.next.value == "EOF"):
+                self.tokenizer.select_next()
+                if_false = NoOp()
+            else:
+                raise ValueError(f"statement\nLast token: {self.tokenizer.next.value}")
+            return If(condition, if_true, if_false)
         
-        if self.tokens.next.type == EOF:
-            a = master_node.Evaluate(identifier_table)
-            return a
+        elif self.tokenizer.next.value == "for":
+            self.tokenizer.select_next() 
+            init = self.assign()
+            self.tokenizer.select_next() 
+            cond = self.bool_expr()
+            self.tokenizer.select_next() 
+            inc = self.assign()
+            do = self.block()
+            return For(init, cond, inc, do)
+        
+        elif self.tokenizer.next.value not in self.signals:
+            return self.assign()
+        
+        elif self.tokenizer.next.value == "{":
+            raise ValueError(f"Statement\nLast token: {self.tokenizer.next.value}")
+        
         else:
-            raise Exception("erro no run")
+            return NoOp()
+        
+    def block(self):
+        self.tokenizer.select_next()
+        self.tokenizer.select_next()
+        while self.tokenizer.next.value != "}":
+            tree = self.statement()
+            self.tokenizer.select_next()
+        self.tokenizer.select_next()
+        return tree
 
+    def assign(self):
+        if self.tokenizer.next.value[0].isdigit():
+            raise ValueError(f"Assign\nLast token: {self.tokenizer.next.value}")
+        left_value = Identifier(self.tokenizer.next.value)
+        self.tokenizer.select_next()
+        if self.tokenizer.next.value != "=":
+            raise ValueError(f"Assign\nLast token: {self.tokenizer.next.value}")
+        self.tokenizer.select_next()
+        return Assingment(left_value, self.bool_expr())
+
+    def bool_expr(self):
+        tree = self.bool_term()
+        while self.tokenizer.next.value in ["||"]:
+            signal = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            tree = BinOp(signal, tree, self.bool_term())
+        return tree
+
+    def bool_term(self):
+        tree = self.rel_expr()
+        while self.tokenizer.next.value in ["&&"]:
+            signal = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            tree = BinOp(signal, tree, self.rel_expr())
+        return tree
+    
+    def rel_expr(self):
+        tree = self.parse_expression()
+        while self.tokenizer.next.value in ["==", ">", "<"]:
+            signal = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            tree = BinOp(signal, tree, self.parse_expression())
+        return tree
+        
+    def parse_expression(self):
+        tree = self.parse_term()
+        while self.tokenizer.next.value in ["+", "-"]:
+            signal = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            tree = BinOp(signal, tree, self.parse_term())
+        return tree
+
+    def parse_term(self):
+        tree = self.parse_factor()
+        while self.tokenizer.next.value in ["/", "*"]:
+            signal = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            tree = BinOp(signal, tree, self.parse_factor())
+        return tree
+    
+    def parse_factor(self):
+        if self.tokenizer.next.value.isdigit():
+            number = int(self.tokenizer.next.value)
+            self.tokenizer.select_next()
+            return IntVal(number)
+        
+        elif self.tokenizer.next.value not in self.signals:
+            value = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            return Identifier(value)
+        
+        elif self.tokenizer.next.value in ["+", "-", "!"]:
+            signal = self.tokenizer.next.value
+            self.tokenizer.select_next()
+            return UnOp(signal, self.parse_factor())
+            
+        elif self.tokenizer.next.value in ["(", ")"]:
+            if self.tokenizer.next.value == "(":
+                self.tokenizer.select_next()
+                tree = self.bool_expr()
+                if self.tokenizer.next.value == ")":
+                    self.tokenizer.select_next()
+                    return tree
+                raise ValueError(f"Parse factor!\nLast token: {self.tokenizer.next.value}")
+        
+        elif self.tokenizer.next.value == "Scanln":
+            self.tokenizer.select_next()
+            self.tokenizer.select_next()
+            self.tokenizer.select_next()
+            return Input()
+            
+    def run(self):
+        self.tokenizer.select_next()
+        program = self.program()
+        if self.tokenizer.next.value == "EOF":
+            return program
+        raise ValueError(f"Run!\nLast token: {self.tokenizer.next.value}")
+
+def main():
+    input_without_comments = PreProcessing.filter(input)
+    symbol_table = SymbolTable()
+    root = Parser(input_without_comments).run().Evaluate(symbol_table)
+    root.Print()
+    
 if __name__ == "__main__":
-    chain = sys.argv[1]
-
-    parser = Parser()
-
-    final = parser.run(chain)
+    main()

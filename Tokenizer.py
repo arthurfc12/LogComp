@@ -1,113 +1,97 @@
 from Token import Token
 import re
 
-PLUS = "+"
-MINUS = "-"
-MULT = "*"
-DIV = "/"
-INT = "NUM"
-EOF = "End of file"
-OPENP = "("
-CLOSEP = ")"
-IDENTIFIER = "IDENTIFIER"
-EQUAL = "="
-PRINT = "Println"
-END = "\n"
-
 class Tokenizer:
-    def __init__(self, source, next=None, position=0):
-        self.source = str(source)
-        self.next = next
+    def __init__(self, source: str, position: int):
+        self.source = source
         self.position = position
-
-    def selectNext(self):
-        value = ""
-        type = None
-
-        if self.position >= len(self.source):
-            value = "EOF"
-            type = EOF
-            self.next = Token(type=type, value=value)
-            return
-
+        self.next = Token(type(source), source)
+    
+    def select_next(self):
+        if self.position == len(self.source):
+            self.next = Token(type("EOF"), "EOF")
+            return 0
+        
+        token = ""
         while self.position < len(self.source):
-            if self.position >= len(self.source):
-                self.next = Token(EOF, " ")
-                return
-            if re.match("[0-9]", self.source[self.position]):
-                while self.position < len(self.source):
-                    if re.match(r"[0-9]", self.source[self.position]):
-                        value += self.source[self.position]
-                        self.position += 1
-                    else:
-                        type = INT
-                        self.next = Token(type=type, value=int(value))
-                        return
-                type = INT
-                self.next = Token(type=type, value=int(value))
-                return
-            elif self.source[self.position] == "+":
-                value = self.source[self.position]
-                type = PLUS
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "-":
-                value = self.source[self.position]
-                type = MINUS
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "*":
-                value = self.source[self.position]
-                type = MULT
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "/":
-                value = self.source[self.position]
-                type = DIV
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "(":
-                value = self.source[self.position]
-                type = OPENP
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == ")":
-                value = self.source[self.position]
-                type = CLOSEP
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "=":
-                value = self.source[self.position]
-                type = EQUAL
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif self.source[self.position] == "\n":
-                value = self.source[self.position]
-                type = END
-                self.next = Token(type=type, value=value)
-                self.position += 1
-                return
-            elif re.match("[a-zA-Z]", self.source[self.position]):
-                while self.position < len(self.source) and re.match(r"[a-zA-Z1-9_]", self.source[self.position]):
-                    value += self.source[self.position]
+            char = self.source[self.position]
+            size_of_token = len(token.strip())
+
+            if char in ["+", "-", "*", "/", "(", ")", "\n", ">", "<", "!", "{", "}", ";"]:
+                if size_of_token == 0:
+                    self.next = Token(type(char), char)
                     self.position += 1
-                if value == PRINT:
-                    type = PRINT
-                    self.next = Token(type=type, value=str(value))
+                    return 0
                 else:
-                    type = IDENTIFIER
-                    self.next = Token(type=type, value=str(value))
-                return
-            elif self.source[self.position] == " ":
-                self.position += 1
-                continue
+                    self.next = Token(type(token.strip()), token.strip())
+                    return 0
+                
+            elif char == "=":
+                if size_of_token == 0:
+                    token_equal = self.source[self.position:self.position+2]
+                    if token_equal == "==":
+                        self.next = Token(type(token_equal), token_equal)
+                        self.position += len(token_equal)
+                        return 0
+                    else:
+                        self.next = Token(type(char), char)
+                        self.position += 1
+                        return 0
+                else:
+                    self.next = Token(type(token.strip()), token.strip())
+                    return 0
+                
+            elif char in ["|", "&"]:
+                if size_of_token == 0:
+                    token_or = self.source[self.position:self.position+2]
+                    if token_or in ["||", "&&"]:
+                        self.next = Token(type(token_or), token_or)
+                        self.position += len(token_or)
+                        return 0
+                    else:
+                        token += char
+                        self.position += 1
+                else:
+                    self.next = Token(type(token.strip()), token.strip())
+                    return 0
+        
+            elif char == "i":
+                token_if = self.source[self.position:self.position+2]
+                if token_if == "if":
+                    self.next = Token(type(token_if), token_if)
+                    self.position += len(token_if)
+                    return 0
+                else:
+                    token += char
+                    self.position += 1
+                
+            elif char == "f":
+                token_for = self.source[self.position:self.position+3]
+                if token_for == "for":
+                    self.next = Token(type(token_for), token_for)
+                    self.position += len(token_for)
+                    return 0
+                else:
+                    token += char
+                    self.position += 1
+                
             else:
-                print(self.source[self.position])
-                raise Exception("valor não previsto")
+                token += char
+                self.position += 1
+            
+        self.next = Token(type(token.strip()), token.strip()) 
+        return 0
+
+
+class SymbolTable:
+    def __init__(self):
+        self.table = dict()
+        
+    def getter(self,identifier):
+        try:
+            return self.table[identifier]
+        except:
+            raise Exception(f"{identifier} variable doesn't exist")
+    
+    def setter(self,identifier,value):
+        self.table[identifier] = value
