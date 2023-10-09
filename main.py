@@ -10,15 +10,8 @@ with open(sys.argv[1], 'r') as f:
     input = f.read()
 
 class PreProcessing:
-    def __init__(self, source):
-        self.source = source
-          
-    def filter(self):
-        with open(self.source, 'r') as input_file:
-                code = input_file.read()
-
-        code = re.sub(r'//.*', '', code)
-        return code
+    def filter(string):
+        return re.sub(r'//.*', '', string).strip()
     
 class Parser:
     def __init__(self, code: str):
@@ -180,6 +173,6 @@ def main():
     symbol_table = SymbolTable()
     root = Parser(input_without_comments).run().Evaluate(symbol_table)
     root.Print()
-    
+
 if __name__ == "__main__":
     main()
