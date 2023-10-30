@@ -1,11 +1,12 @@
 from Tokenizer import *
+from Token import Token
 
 class Node:
     def __init__(self):
         self.value = None
         self.children : list[Node] = []
     
-    def Evaluate(self, symbol_table: SymbolTable):
+    def evaluate(self, symbol_table: SymbolTable):
         pass 
     
     
@@ -15,31 +16,40 @@ class BinOp(Node):
         self.value = value
         self.children = [child_left, child_right]
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        left_value = self.children[0].Evaluate(symbol_table)
-        right_value = self.children[1].Evaluate(symbol_table)
+    def evaluate(self, symbol_table: SymbolTable):
+        left = self.children[0].evaluate(symbol_table)
+        right = self.children[1].evaluate(symbol_table)
 
-        if self.value == "+":
-            return left_value + right_value
+        left_value = left[0]
+        left_type = left[1]
+
+        right_value = right[0]
+        right_type = right[1]
+
+        if self.value == ".":
+            return (str(left_value) + str(right_value), "string")
+
+        if left_type != right_type: 
+            raise ValueError(f"tipos diferentes na operacao")
+        elif self.value == "+":
+            return (left_value + right_value, "int")
         elif self.value == "-":
-            return left_value - right_value
+            return (left_value - right_value, "int")
         elif self.value == "*":
-            return left_value * right_value
+            return (left_value * right_value, "int")
         elif self.value == "/":
-            return left_value // right_value
+            return (left_value // right_value, "int")
         elif self.value == "||":
-            return left_value | right_value
+            return (int(left_value | right_value), "int")
         elif self.value == "&&":
-            return left_value & right_value
+            return (int(left_value & right_value), "int")
         elif self.value == "==":
-            return left_value == right_value
+            return (int(left_value == right_value), "int")
         elif self.value == ">":
-            return left_value > right_value
+            return (int(left_value > right_value), "int")
         elif self.value == "<":
-            return left_value < right_value
-        else:
-            raise Exception("Erro")
-                
+            return (int(left_value < right_value), "int")
+        
         
 class UnOp(Node):
     def __init__(self, value: str, child: Node):
@@ -47,22 +57,19 @@ class UnOp(Node):
         self.value = value
         self.children = [child]
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        value = self.children[0].Evaluate(symbol_table)
+    def evaluate(self, symbol_table: SymbolTable):
+        value = self.children[0].evaluate(symbol_table)[0]
 
         if value >= 0 and self.value == "+":
-            return value
+            return (value, "int")
         elif value >= 0 and self.value == "-":
-            return -abs(value)
+            return (-abs(value), "int")
         elif value < 0 and self.value == "+":
-            return value
+            return (value, "int")
         elif value < 0 and self.value == "-":
-            return abs(value)
+            return (abs(value), "int")
         elif self.value == "!":
-            return not value
-        else:
-            raise Exception("Erro")
-
+            return (int(not value), "int")
 
 
 class IntVal(Node):
@@ -70,24 +77,33 @@ class IntVal(Node):
         super().__init__()
         self.value = value
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        return self.value
+    def evaluate(self, symbol_table: SymbolTable):
+        return (self.value, "int")
+    
+
+class StrVal(Node):
+    def __init__(self, value: int):
+        super().__init__()
+        self.value = value
+
+    def evaluate(self, symbol_table: SymbolTable):
+        return (self.value, "string")
 
 
 class NoOp(Node):
     def __init__(self):
         super().__init__()
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        return None
+    def evaluate(self, symbol_table: SymbolTable):
+        return (None, None)
     
 
-class Identifier(Node):
+class Iden(Node):
     def __init__(self, value: str):
         super().__init__()
         self.value = value
 
-    def Evaluate(self, symbol_table: SymbolTable):
+    def evaluate(self, symbol_table: SymbolTable):
         return symbol_table.getter(self.value)
     
 
@@ -95,9 +111,9 @@ class Program(Node):
     def __init__(self):
         super().__init__()
 
-    def Evaluate(self, symbol_table: SymbolTable):
+    def evaluate(self, symbol_table: SymbolTable):
         for child in self.children:
-            child.Evaluate(symbol_table)
+            child.evaluate(symbol_table)
 
 
 class Println(Node):
@@ -105,46 +121,63 @@ class Println(Node):
         super().__init__()
         self.children = [child]
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        print(self.children[0].Evaluate(symbol_table))
+    def evaluate(self, symbol_table: SymbolTable):
+        print(self.children[0].evaluate(symbol_table)[0])
 
     
 class Assingment(Node):
-    def __init__(self, child_left: Identifier, child_right: Node):
+    def __init__(self, child_left: Iden, child_right: Node):
         super().__init__()
         self.children = [child_left, child_right]
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        symbol_table.setter(self.children[0].value, self.children[1].Evaluate(symbol_table))
+    def evaluate(self, symbol_table: SymbolTable):
+        iden_value = self.children[1].evaluate(symbol_table)[0]
+
+        if type(iden_value).__name__ == "str": iden_type = "string"
+        else: iden_type = "int"
+
+        symbol_table.setter(self.children[0].value, iden_value, iden_type)
 
     
 class If(Node):
-    def __init__(self, child_conditional: Node, child_true: Node, child_false: Node):
+    def __init__(self, child_cond: Node, child_true: Node, child_false: Node):
         super().__init__()
-        self.children = [child_conditional, child_true, child_false]
+        self.children = [child_cond, child_true, child_false]
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        if self.children[0].Evaluate(symbol_table):
-            return self.children[1].Evaluate(symbol_table)
+    def evaluate(self, symbol_table: SymbolTable):
+        if self.children[0].evaluate(symbol_table)[0]:
+            return self.children[1].evaluate(symbol_table)
         else:
-            return self.children[2].Evaluate(symbol_table)
+            return self.children[2].evaluate(symbol_table)
 
 
 class For(Node):
-    def __init__(self, child_init: Node, child_conditional: Node, child_increment: Node, child_do: Node):
+    def __init__(self, child_init: Node, child_cond: Node, child_inc: Node, child_do: Node):
         super().__init__()
-        self.children = [child_init, child_conditional, child_increment, child_do]
+        self.children = [child_init, child_cond, child_inc, child_do]
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        i = self.children[0].Evaluate(symbol_table)
-        while self.children[1].Evaluate(symbol_table):
-            self.children[3].Evaluate(symbol_table)
-            i = self.children[2].Evaluate(symbol_table)
+    def evaluate(self, symbol_table: SymbolTable):
+        i = self.children[0].evaluate(symbol_table)
+        while self.children[1].evaluate(symbol_table)[0]:
+            self.children[3].evaluate(symbol_table)
+            i = self.children[2].evaluate(symbol_table)
 
 
 class Input(Node):
     def __init__(self):
         super().__init__()
 
-    def Evaluate(self, symbol_table: SymbolTable):
-        return int(input())
+    def evaluate(self, symbol_table: SymbolTable):
+        return (int(input()), "int")
+    
+
+class VarDec(Node):
+    def __init__(self, value: str, child_left: Node, child_right: Node = NoOp()):
+        super().__init__()
+        self.value = value
+        self.children = [child_left, child_right]
+
+    def evaluate(self, symbol_table: SymbolTable):
+        if self.children[0].value in symbol_table.dictionary:
+            raise ValueError("tipo diferente da variavel")
+        symbol_table.setter(self.children[0].value, self.children[1].evaluate(symbol_table)[0], self.value)
