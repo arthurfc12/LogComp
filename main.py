@@ -40,7 +40,9 @@ class Parser:
     def parseProgram(self):
         childrens = []
         while self.tokens.next.type != EOF:
-            childrens.append(self.parseStatement())
+            childrens.append(self.parseDeclaration())
+            while self.tokens.next.type == '\n':
+                self.tokens.selectNext()
         return childrens
 
     def parseBlock(self):
@@ -53,6 +55,10 @@ class Parser:
                     node = self.parseStatement()
                     childrens.append(node)
                 self.tokens.selectNext()
+                if self.tokens.next.type not in [END,EOF,ELSE]:
+                    raise Exception("espaço necessario")
+            else:
+                raise Exception("codigo incorreto")
         master = Block("Block", childrens)
         return master
 
@@ -100,16 +106,72 @@ class Parser:
             raise Exception("codigo incorreto")
 
         return node
+    
+    def parseDeclaration(self):
+        argumentos = []
+        if self.tokens.next.type == FUNC:
+            self.tokens.selectNext()
+            if self.tokens.next.type == IDENTIFIER:
+                nome_funcao = self.tokens.next.value
+                self.tokens.selectNext()
+                if self.tokens.next.type == PAR_IN:
+                    self.tokens.selectNext()
+                    if self.tokens.next.type == COMMA:
+                        raise Exception("virgula nn suportada")
+                    
+                    while self.tokens.next.type != PAR_OUT:
+                        if self.tokens.next.type == IDENTIFIER:
+                            nome_argumento = self.tokens.next.value
+                            self.tokens.selectNext()
+                            if self.tokens.next.type in [T_INT,T_STRING]:
+                                tipo_argumento = self.tokens.next.type
+                                arg = VarDec(tipo_argumento, [nome_argumento])
+                                argumentos.append(arg)
+                                self.tokens.selectNext()
+                            else:
+                                raise Exception("declaracao incorreta")
+                        elif self.tokens.next.type == COMMA:
+                            self.tokens.selectNext()
+                            if self.tokens.next.type == PAR_OUT:
+                                raise Exception("parenteses nn suportado")
+                        else:
+                            raise Exception("codigo incorreto")
+                    
+                    self.tokens.selectNext()
+                    if self.tokens.next.type in [T_INT,T_STRING]:
+                        tipo_func = self.tokens.next.type
+                        func_dec = VarDec(tipo_func, [nome_funcao])
+                        argumentos.insert(0,func_dec)
+                        self.tokens.selectNext()
+                        argumentos.append(self.parseBlock())
+                        variable = FuncDec((nome_funcao,tipo_func),argumentos)
+                    else:
+                        raise Exception("declaracao incorreta de funcao")
+        return variable
 
     def parseStatement(self):
         if self.tokens.next.type == IDENTIFIER:
-            variable = Identifier(self.tokens.next.value, [])
+            identifier_name = self.tokens.next.value
+            variable = Identifier(identifier_name, [])
             self.tokens.selectNext()
             if self.tokens.next.type == EQUAL:
                 self.tokens.selectNext()
                 variable = Assigment(EQUAL, [variable, self.parseBoolExpression()])
+            elif self.tokens.next.type == PAR_IN:
+                self.tokens.selectNext()
+                nodes = []                
+                if self.tokens.next.type == COMMA:
+                    raise Exception("codigo incorreto")
+                
+                while self.tokens.next.type != PAR_OUT:
+                    nodes.append(self.parseBoolExpression())
+                    if self.tokens.next.type == COMMA:
+                        self.tokens.selectNext()
+                        nodes.append(self.parseBoolExpression())
+                self.tokens.selectNext()        
+                variable = FuncCall(identifier_name,nodes)
             else:
-                raise Exception("operacao nao prevista")
+                raise Exception("operacao nn suportada")
         elif self.tokens.next.type == PRINT:
             self.tokens.selectNext()
             if self.tokens.next.type == PAR_IN:
@@ -128,14 +190,14 @@ class Parser:
             if self.tokens.next.type == IDENTIFIER:
                 name = self.tokens.next.value
                 self.tokens.selectNext()
-                if self.tokens.next.type in [T_INT,T_STRING]:
+                if self.tokens.next.type in [T_INT, T_STRING]:
                     variable_type = self.tokens.next.type
                     self.tokens.selectNext()
                     if self.tokens.next.type == EQUAL:
                         self.tokens.selectNext()
-                        variable = VarDec(variable_type,[name,self.parseBoolExpression()])
+                        variable = VarDec(variable_type, [name, self.parseBoolExpression()])
                     elif self.tokens.next.type == EOF or self.tokens.next.type == END:
-                        variable = VarDec(variable_type,[name])
+                        variable = VarDec(variable_type, [name])
                         self.tokens.selectNext()
                     else:
                         raise Exception("codigo incorreto")
@@ -173,35 +235,52 @@ class Parser:
                                 self.tokens.selectNext()
                                 if self.tokens.next.type == EQUAL:
                                     self.tokens.selectNext()
-                                    c = Assigment(EQUAL, [variable, self.parseBoolExpression()])
+                                    c = Assigment(
+                                        EQUAL, [variable, self.parseBoolExpression()]
+                                    )  # for increment
                                     block = self.parseBlock()
-                                    variable = FORNode(IF,[a,b,block,c])
-                                    if self.tokens.next.type == END or self.tokens.next.type == EOF:
+                                    variable = FORNode(IF, [a, b, block, c])
+                                    if (
+                                        self.tokens.next.type == END
+                                        or self.tokens.next.type == EOF
+                                    ):
                                         self.tokens.selectNext()
                                     else:
                                         raise Exception("codigo incorreto")
                                 else:
-                                    raise Exception("operacao nao prevista")
+                                    raise Exception("operacao nn suportada")
                             else:
-                                raise Exception("for assignment ; condition; expression {block}")
+                                raise Exception(
+                                    "for assignment ; condition; expression {block}"
+                                )
                         else:
-                            raise Exception("for assignment ; condition; expression {block}")
+                            raise Exception(
+                                "for assignment ; condition; expression {block}"
+                            )
                     else:
-                        raise Exception("for assignment ; condition; expression {block}")  
+                        raise Exception(
+                            "for assignment ; condition; expression {block}"
+                        )
                 else:
                     raise Exception("for assignment ; condition; expression {block}")
+        elif self.tokens.next.type == RETURN:
+            self.tokens.selectNext()
+            variable = ReturnNode(RETURN,[self.parseBoolExpression()])
         elif self.tokens.next.type == END:
             self.tokens.selectNext()
             variable = NoOp("NoOp", [])
         else:
-            # print(self.tokens.next.type)
             raise Exception("codigo incorreto")
-        
+
         return variable
 
     def parseExpression(self):
         node = self.parseTerm()
-        while self.tokens.next.type == PLUS or self.tokens.next.type == MINUS or self.tokens.next.type==CONCAT:
+        while (
+            self.tokens.next.type == PLUS
+            or self.tokens.next.type == MINUS
+            or self.tokens.next.type == CONCAT
+        ):
             if self.tokens.next.type == PLUS:
                 self.tokens.selectNext()
                 node = BinOp(PLUS, [node, self.parseTerm()])
@@ -233,17 +312,33 @@ class Parser:
 
     def parseFactor(self):
         node = 0
-        if self.tokens.next.type == INT:  
+        if self.tokens.next.type == INT:
             node = IntVal(self.tokens.next.value, [])
             self.tokens.selectNext()
             if self.tokens.next.type == INT:
                 raise Exception("codigo incorreto")
-        elif self.tokens.next.type == STR: 
+        elif self.tokens.next.type == STR:
             node = StrVal(self.tokens.next.value, [])
             self.tokens.selectNext()
-        elif self.tokens.next.type == IDENTIFIER:  
-            node = Identifier(self.tokens.next.value, [])
+        elif self.tokens.next.type == IDENTIFIER:
+            identifier_name = self.tokens.next.value
             self.tokens.selectNext()
+            if self.tokens.next.type == PAR_IN:
+                self.tokens.selectNext()
+                nodes = []
+                if self.tokens.next.type == COMMA:
+                    raise Exception("codigo incorreto")
+                
+                while self.tokens.next.type != PAR_OUT:
+                    nodes.append(self.parseBoolExpression())
+                    if self.tokens.next.type == COMMA:
+                        self.tokens.selectNext()
+                        nodes.append(self.parseBoolExpression())
+                
+                self.tokens.selectNext()
+                node = FuncCall(identifier_name,nodes)
+            else:
+                node = Identifier(identifier_name, [])
         elif self.tokens.next.type == PLUS:
             self.tokens.selectNext()
             node = UnOp(PLUS, [self.parseFactor()])
@@ -264,13 +359,11 @@ class Parser:
             self.tokens.selectNext()
             if self.tokens.next.type == PAR_IN:
                 self.tokens.selectNext()
-                node = Scanln(SCAN,[])
+                node = Scanln(SCAN, [])
                 if self.tokens.next.type != PAR_OUT:
                     raise Exception("codigo incorreto")
                 self.tokens.selectNext()
         else:
-            print(self.tokens.next.type)
-            print(self.tokens.next.value)
             raise Exception("codigo incorreto")
 
         return node
@@ -278,23 +371,23 @@ class Parser:
     def run(self, code):
         filtered = PrePro(code).filter()
         identifier_table = SymbolTable()
+        function_table = SymbolTable()
         self.tokens = Tokenizer(filtered)
         self.tokens.selectNext()
         list_of_nodes = self.parseProgram()
         if self.tokens.next.type == EOF:
             for node in list_of_nodes:
-                node.Evaluate(identifier_table)
-            new_file = chain.replace("go","asm")
-            f = open(new_file,"w")
-            f.write(Node.endcode())
-            f.close()
+                node.Evaluate(identifier_table,function_table)
+                
+            main_node = FuncCall('main',[])
+            main_node.Evaluate(identifier_table,function_table)
         else:
             raise Exception("codigo incorreto")
 
 
 if __name__ == "__main__":
     chain = sys.argv[1]
-    
+
     parser = Parser()
-    
+
     final = parser.run(chain)

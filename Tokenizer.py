@@ -15,6 +15,8 @@ PAR_OUT = ")"
 BRA_IN = "{"
 BRA_OUT = "}"
 SEMICOLUMN = ";"
+COMMA = ","
+RETURN = "return"
 IDENTIFIER = "IDENTIFIER"
 EQUAL = "="
 NOT = "!"
@@ -29,6 +31,7 @@ LT = "<"
 IF = "if"
 ELSE = "else"
 FOR = "for"
+FUNC = "func"
 END = "\n"
 EOF = "End of File"
 
@@ -61,16 +64,16 @@ class Tokenizer:
                 return
             elif self.source[self.position] == '"':
                 string_value = ""
-                self.position+=1
-                while (self.position < len(self.source)):
+                self.position += 1
+                while self.position < len(self.source):
                     if self.source[self.position] != '"':
-                        string_value+=self.source[self.position]
-                        self.position+=1
+                        string_value += self.source[self.position]
+                        self.position += 1
                     else:
-                        self.position+=1
+                        self.position += 1
                         self.next = Token(type=STR, value=str(string_value))
                         return
-                raise Exception("String Incorrect")
+                raise Exception("String errada")
             elif self.source[self.position] == "+":
                 self.next = Token(type=PLUS, value=self.source[self.position])
                 self.position += 1
@@ -111,6 +114,10 @@ class Tokenizer:
                 self.next = Token(type=SEMICOLUMN, value=self.source[self.position])
                 self.position += 1
                 return
+            elif self.source[self.position] == ",":
+                self.next = Token(type=COMMA, value=self.source[self.position])
+                self.position += 1
+                return
             elif re.match(
                 "[a-zA-Z]", self.source[self.position]
             ):
@@ -130,6 +137,10 @@ class Tokenizer:
                     self.next = Token(type=ELSE, value=str(val))
                 elif val == FOR:
                     self.next = Token(type=FOR, value=str(val))
+                elif val == RETURN:
+                    self.next = Token(type=RETURN, value=str(val))
+                elif val == FUNC:
+                    self.next = Token(type=FUNC, value=str(val))
                 elif val == VAR:
                     self.next = Token(type=VAR, value=str(val))
                 elif val == T_INT:
@@ -138,7 +149,6 @@ class Tokenizer:
                     self.next = Token(type=T_STRING, value=str(val))
                 else:
                     self.next = Token(type=IDENTIFIER, value=str(val))
-                
                 return
             elif self.source[self.position] == ">":
                 self.next = Token(type=GT, value=self.source[self.position])
@@ -164,15 +174,15 @@ class Tokenizer:
                     return
                 else:
                     raise Exception("| nn eh valido, tentar ||")
-            elif self.source[self.position] == "=":
+            elif self.source[self.position] == "=":  # Checking if is =
                 self.position += 1
-                if self.source[self.position] == "=":
+                if self.source[self.position] == "=":  # Checking if is ==
                     self.next = Token(type=COMPARE, value=self.source[self.position])
                     self.position += 1
                 else:
                     self.next = Token(type=EQUAL, value=self.source[self.position - 1])
                 return
-            elif self.source[self.position] == "&":
+            elif self.source[self.position] == "&":  # Checking if is &&
                 self.position += 1
                 if self.source[self.position] == "&":
                     self.next = Token(type=AND, value=self.source[self.position])
@@ -180,36 +190,8 @@ class Tokenizer:
                     return
                 else:
                     raise Exception("& nn eh valido, tentar &&")
-            elif self.source[self.position] == " ":
+            elif self.source[self.position] == " ":  # jumping spaces
                 self.position += 1
                 continue
             else:
                 raise Exception("nao eh token")
-
-class SymbolTable:
-    def __init__(self):
-        self.table = dict()
-        self.id = 1
-
-    def getter(self, identifier):
-        try:
-            return self.table[identifier]
-        except:
-            raise Exception(f"{identifier} variavel nn existe")
-        
-    def create(self, identifier, type):
-        if identifier in self.table.keys():
-            raise Exception("variavel ja exidte")
-        else:
-            self.table[identifier] = (None,type,self.id)
-            self.id+=1
-
-    def setter(self, identifier, value):
-        if identifier not in self.table.keys():
-            raise Exception("variavel nn declarada")
-        else:
-            if (self.table[identifier][1] == value[1]):
-                self.table[identifier] = (value[0],value[1],self.table[identifier][2])
-            else:
-                raise Exception("tipagens diferentes")
-
